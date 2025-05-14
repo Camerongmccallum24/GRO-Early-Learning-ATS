@@ -1,0 +1,389 @@
+import { 
+  users, type User, type InsertUser,
+  jobPostings, type JobPosting, type InsertJobPosting,
+  candidates, type Candidate, type InsertCandidate,
+  applications, type Application, type InsertApplication,
+  locations, type Location, type InsertLocation,
+  interviews, type Interview, type InsertInterview,
+  auditLogs, type AuditLog, type InsertAuditLog
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, asc, like, inArray, isNull, sql } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+
+// Storage interface
+export interface IStorage {
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  validateUserCredentials(username: string, password: string): Promise<User | null>;
+  
+  // Location methods
+  getLocations(): Promise<Location[]>;
+  getLocation(id: number): Promise<Location | undefined>;
+  createLocation(location: InsertLocation): Promise<Location>;
+  
+  // Job posting methods
+  getJobPostings(filters?: { status?: string, locationId?: number }): Promise<(JobPosting & { locationName?: string, applicationCount?: number })[]>;
+  getJobPosting(id: number): Promise<JobPosting | undefined>;
+  createJobPosting(jobPosting: InsertJobPosting): Promise<JobPosting>;
+  updateJobPosting(id: number, jobPosting: Partial<InsertJobPosting>): Promise<JobPosting>;
+  deleteJobPosting(id: number): Promise<boolean>;
+  
+  // Candidate methods
+  getCandidates(): Promise<Candidate[]>;
+  getCandidate(id: number): Promise<Candidate | undefined>;
+  getCandidateByEmail(email: string): Promise<Candidate | undefined>;
+  createCandidate(candidate: InsertCandidate): Promise<Candidate>;
+  updateCandidate(id: number, candidate: Partial<InsertCandidate>): Promise<Candidate>;
+  
+  // Application methods
+  getApplications(filters?: { status?: string, jobPostingId?: number, locationId?: number }): Promise<(Application & { candidate?: Candidate, jobPosting?: JobPosting & { location?: Location } })[]>;
+  getApplication(id: number): Promise<(Application & { candidate?: Candidate, jobPosting?: JobPosting & { location?: Location } }) | undefined>;
+  createApplication(application: InsertApplication): Promise<Application>;
+  updateApplicationStatus(id: number, status: string): Promise<Application>;
+  
+  // Interview methods
+  getInterviews(): Promise<(Interview & { application?: Application & { candidate?: Candidate } })[]>;
+  getInterview(id: number): Promise<Interview | undefined>;
+  createInterview(interview: InsertInterview): Promise<Interview>;
+  updateInterview(id: number, interview: Partial<InsertInterview>): Promise<Interview>;
+  
+  // Audit log methods
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+
+  // Dashboard methods
+  getDashboardStats(): Promise<{
+    activeJobs: number;
+    newApplications: number;
+    interviews: number;
+    filled: number;
+    applicationsByLocation: Array<{ location: string; count: number }>;
+    applicationsByPosition: Array<{ position: string; count: number }>;
+  }>;
+  getRecentApplications(limit?: number): Promise<(Application & { candidate?: Candidate, jobPosting?: JobPosting & { location?: Location } })[]>;
+}
+
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    const [user] = await db
+      .insert(users)
+      .values({ ...insertUser, password: hashedPassword })
+      .returning();
+    return user;
+  }
+
+  async validateUserCredentials(username: string, password: string): Promise<User | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user) return null;
+    
+    const isValid = await bcrypt.compare(password, user.password);
+    return isValid ? user : null;
+  }
+
+  // Location methods
+  async getLocations(): Promise<Location[]> {
+    return await db.select().from(locations).orderBy(asc(locations.name));
+  }
+
+  async getLocation(id: number): Promise<Location | undefined> {
+    const [location] = await db.select().from(locations).where(eq(locations.id, id));
+    return location;
+  }
+
+  async createLocation(location: InsertLocation): Promise<Location> {
+    const [newLocation] = await db.insert(locations).values(location).returning();
+    return newLocation;
+  }
+
+  // Job posting methods
+  async getJobPostings(filters?: { status?: string, locationId?: number }): Promise<(JobPosting & { locationName?: string, applicationCount?: number })[]> {
+    const query = db
+      .select({
+        ...jobPostings,
+        locationName: locations.name,
+        applicationCount: sql<number>`(SELECT COUNT(*) FROM ${applications} WHERE ${applications.jobPostingId} = ${jobPostings.id})`,
+      })
+      .from(jobPostings)
+      .leftJoin(locations, eq(jobPostings.locationId, locations.id))
+      .orderBy(desc(jobPostings.createdAt));
+
+    if (filters?.status) {
+      query.where(eq(jobPostings.status, filters.status));
+    }
+
+    if (filters?.locationId) {
+      query.where(eq(jobPostings.locationId, filters.locationId));
+    }
+
+    return await query;
+  }
+
+  async getJobPosting(id: number): Promise<JobPosting | undefined> {
+    const [jobPosting] = await db
+      .select()
+      .from(jobPostings)
+      .where(eq(jobPostings.id, id));
+    return jobPosting;
+  }
+
+  async createJobPosting(jobPosting: InsertJobPosting): Promise<JobPosting> {
+    const [newJob] = await db.insert(jobPostings).values(jobPosting).returning();
+    return newJob;
+  }
+
+  async updateJobPosting(id: number, jobPosting: Partial<InsertJobPosting>): Promise<JobPosting> {
+    const [updatedJob] = await db
+      .update(jobPostings)
+      .set({ ...jobPosting, updatedAt: new Date() })
+      .where(eq(jobPostings.id, id))
+      .returning();
+    return updatedJob;
+  }
+
+  async deleteJobPosting(id: number): Promise<boolean> {
+    await db.delete(jobPostings).where(eq(jobPostings.id, id));
+    return true;
+  }
+
+  // Candidate methods
+  async getCandidates(): Promise<Candidate[]> {
+    return await db.select().from(candidates).orderBy(desc(candidates.createdAt));
+  }
+
+  async getCandidate(id: number): Promise<Candidate | undefined> {
+    const [candidate] = await db.select().from(candidates).where(eq(candidates.id, id));
+    return candidate;
+  }
+
+  async getCandidateByEmail(email: string): Promise<Candidate | undefined> {
+    const [candidate] = await db.select().from(candidates).where(eq(candidates.email, email));
+    return candidate;
+  }
+
+  async createCandidate(candidate: InsertCandidate): Promise<Candidate> {
+    const [newCandidate] = await db.insert(candidates).values(candidate).returning();
+    return newCandidate;
+  }
+
+  async updateCandidate(id: number, candidate: Partial<InsertCandidate>): Promise<Candidate> {
+    const [updatedCandidate] = await db
+      .update(candidates)
+      .set(candidate)
+      .where(eq(candidates.id, id))
+      .returning();
+    return updatedCandidate;
+  }
+
+  // Application methods
+  async getApplications(filters?: { status?: string, jobPostingId?: number, locationId?: number }): Promise<(Application & { candidate?: Candidate, jobPosting?: JobPosting & { location?: Location } })[]> {
+    let query = db
+      .select({
+        ...applications,
+        candidate: candidates,
+        jobPosting: {
+          ...jobPostings,
+          location: locations,
+        },
+      })
+      .from(applications)
+      .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+      .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id))
+      .leftJoin(locations, eq(jobPostings.locationId, locations.id))
+      .orderBy(desc(applications.applicationDate));
+
+    if (filters?.status) {
+      query = query.where(eq(applications.status, filters.status));
+    }
+
+    if (filters?.jobPostingId) {
+      query = query.where(eq(applications.jobPostingId, filters.jobPostingId));
+    }
+
+    if (filters?.locationId) {
+      query = query.where(eq(jobPostings.locationId, filters.locationId));
+    }
+
+    return await query;
+  }
+
+  async getApplication(id: number): Promise<(Application & { candidate?: Candidate, jobPosting?: JobPosting & { location?: Location } }) | undefined> {
+    const [application] = await db
+      .select({
+        ...applications,
+        candidate: candidates,
+        jobPosting: {
+          ...jobPostings,
+          location: locations,
+        },
+      })
+      .from(applications)
+      .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+      .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id))
+      .leftJoin(locations, eq(jobPostings.locationId, locations.id))
+      .where(eq(applications.id, id));
+
+    return application;
+  }
+
+  async createApplication(application: InsertApplication): Promise<Application> {
+    const [newApplication] = await db.insert(applications).values(application).returning();
+    return newApplication;
+  }
+
+  async updateApplicationStatus(id: number, status: string): Promise<Application> {
+    const [updatedApplication] = await db
+      .update(applications)
+      .set({ 
+        status: status as any, 
+        lastStatusChangeDate: new Date() 
+      })
+      .where(eq(applications.id, id))
+      .returning();
+    return updatedApplication;
+  }
+
+  // Interview methods
+  async getInterviews(): Promise<(Interview & { application?: Application & { candidate?: Candidate } })[]> {
+    return await db
+      .select({
+        ...interviews,
+        application: {
+          ...applications,
+          candidate: candidates,
+        },
+      })
+      .from(interviews)
+      .leftJoin(applications, eq(interviews.applicationId, applications.id))
+      .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+      .orderBy(asc(interviews.scheduledDate));
+  }
+
+  async getInterview(id: number): Promise<Interview | undefined> {
+    const [interview] = await db.select().from(interviews).where(eq(interviews.id, id));
+    return interview;
+  }
+
+  async createInterview(interview: InsertInterview): Promise<Interview> {
+    const [newInterview] = await db.insert(interviews).values(interview).returning();
+    return newInterview;
+  }
+
+  async updateInterview(id: number, interview: Partial<InsertInterview>): Promise<Interview> {
+    const [updatedInterview] = await db
+      .update(interviews)
+      .set(interview)
+      .where(eq(interviews.id, id))
+      .returning();
+    return updatedInterview;
+  }
+
+  // Audit log methods
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const [newLog] = await db.insert(auditLogs).values(log).returning();
+    return newLog;
+  }
+
+  // Dashboard methods
+  async getDashboardStats(): Promise<{
+    activeJobs: number;
+    newApplications: number;
+    interviews: number;
+    filled: number;
+    applicationsByLocation: Array<{ location: string; count: number }>;
+    applicationsByPosition: Array<{ position: string; count: number }>;
+  }> {
+    // Count active jobs
+    const [activeJobsResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(jobPostings)
+      .where(eq(jobPostings.status, 'active'));
+    
+    // Count applications submitted in the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const [newApplicationsResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(applications)
+      .where(sql`${applications.applicationDate} >= ${thirtyDaysAgo}`);
+    
+    // Count upcoming interviews
+    const [interviewsResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(interviews)
+      .where(sql`${interviews.scheduledDate} >= now() AND ${interviews.status} = 'scheduled'`);
+    
+    // Count positions filled (hired applications)
+    const [filledResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(applications)
+      .where(eq(applications.status, 'hired'));
+    
+    // Get applications by location
+    const applicationsByLocation = await db
+      .select({
+        location: locations.name,
+        count: sql<number>`count(*)`,
+      })
+      .from(applications)
+      .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id))
+      .leftJoin(locations, eq(jobPostings.locationId, locations.id))
+      .groupBy(locations.name)
+      .orderBy(desc(sql<number>`count(*)`));
+    
+    // Get applications by position/job title
+    const applicationsByPosition = await db
+      .select({
+        position: jobPostings.title,
+        count: sql<number>`count(*)`,
+      })
+      .from(applications)
+      .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id))
+      .groupBy(jobPostings.title)
+      .orderBy(desc(sql<number>`count(*)`))
+      .limit(5);
+    
+    return {
+      activeJobs: activeJobsResult?.count || 0,
+      newApplications: newApplicationsResult?.count || 0,
+      interviews: interviewsResult?.count || 0,
+      filled: filledResult?.count || 0,
+      applicationsByLocation,
+      applicationsByPosition,
+    };
+  }
+
+  async getRecentApplications(limit: number = 5): Promise<(Application & { candidate?: Candidate, jobPosting?: JobPosting & { location?: Location } })[]> {
+    return await db
+      .select({
+        ...applications,
+        candidate: candidates,
+        jobPosting: {
+          ...jobPostings,
+          location: locations,
+        },
+      })
+      .from(applications)
+      .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+      .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id))
+      .leftJoin(locations, eq(jobPostings.locationId, locations.id))
+      .orderBy(desc(applications.applicationDate))
+      .limit(limit);
+  }
+}
+
+export const storage = new DatabaseStorage();

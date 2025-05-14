@@ -1,0 +1,215 @@
+import { pgTable, text, serial, integer, boolean, timestamp, date, pgEnum } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { z } from "zod";
+import { relations } from "drizzle-orm";
+
+// Users (for HR admin accounts)
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  role: text("role").default("hr_admin").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
+// Job application status enum
+export const applicationStatusEnum = pgEnum("application_status", [
+  "applied",
+  "in_review",
+  "interview",
+  "offered",
+  "hired",
+  "rejected",
+]);
+
+// Job posting status enum
+export const jobStatusEnum = pgEnum("job_status", [
+  "draft",
+  "active",
+  "closed",
+]);
+
+// Employment type enum
+export const employmentTypeEnum = pgEnum("employment_type", [
+  "full_time",
+  "part_time",
+  "casual",
+  "contract",
+]);
+
+// Locations
+export const locations = pgTable("locations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  city: text("city").notNull(),
+  state: text("state").default("QLD").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertLocationSchema = createInsertSchema(locations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertLocation = z.infer<typeof insertLocationSchema>;
+export type Location = typeof locations.$inferSelect;
+
+// Job Postings
+export const jobPostings = pgTable("job_postings", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  locationId: integer("location_id").notNull().references(() => locations.id),
+  employmentType: employmentTypeEnum("employment_type").notNull(),
+  salaryRange: text("salary_range"),
+  qualifications: text("qualifications").notNull(),
+  description: text("description").notNull(),
+  requirements: text("requirements"),
+  benefits: text("benefits"),
+  deadline: date("deadline"),
+  status: jobStatusEnum("status").default("draft").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdById: integer("created_by_id").references(() => users.id),
+});
+
+export const jobPostingsRelations = relations(jobPostings, ({ one, many }) => ({
+  location: one(locations, {
+    fields: [jobPostings.locationId],
+    references: [locations.id],
+  }),
+  applications: many(applications),
+  createdBy: one(users, {
+    fields: [jobPostings.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertJobPosting = z.infer<typeof insertJobPostingSchema>;
+export type JobPosting = typeof jobPostings.$inferSelect;
+
+// Candidates
+export const candidates = pgTable("candidates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone"),
+  resumePath: text("resume_path"),
+  skills: text("skills"),
+  experience: text("experience"),
+  education: text("education"),
+  consentDate: timestamp("consent_date").defaultNow().notNull(),
+  consentPolicyVersion: text("consent_policy_version").default("1.0").notNull(),
+  ccpaOptOut: boolean("ccpa_opt_out").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const candidatesRelations = relations(candidates, ({ many }) => ({
+  applications: many(applications),
+}));
+
+export const insertCandidateSchema = createInsertSchema(candidates).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCandidate = z.infer<typeof insertCandidateSchema>;
+export type Candidate = typeof candidates.$inferSelect;
+
+// Applications
+export const applications = pgTable("applications", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id),
+  jobPostingId: integer("job_posting_id").notNull().references(() => jobPostings.id),
+  status: applicationStatusEnum("status").default("applied").notNull(),
+  source: text("source").default("direct").notNull(),
+  notes: text("notes"),
+  applicationDate: timestamp("application_date").defaultNow().notNull(),
+  lastStatusChangeDate: timestamp("last_status_change_date").defaultNow().notNull(),
+});
+
+export const applicationsRelations = relations(applications, ({ one }) => ({
+  candidate: one(candidates, {
+    fields: [applications.candidateId],
+    references: [candidates.id],
+  }),
+  jobPosting: one(jobPostings, {
+    fields: [applications.jobPostingId],
+    references: [jobPostings.id],
+  }),
+}));
+
+export const insertApplicationSchema = createInsertSchema(applications).omit({
+  id: true,
+  applicationDate: true,
+  lastStatusChangeDate: true,
+});
+
+export type InsertApplication = z.infer<typeof insertApplicationSchema>;
+export type Application = typeof applications.$inferSelect;
+
+// Interviews
+export const interviews = pgTable("interviews", {
+  id: serial("id").primaryKey(),
+  applicationId: integer("application_id").notNull().references(() => applications.id),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  duration: integer("duration").default(60).notNull(), // in minutes
+  interviewType: text("interview_type").default("in-person").notNull(),
+  interviewerId: integer("interviewer_id").references(() => users.id),
+  notes: text("notes"),
+  status: text("status").default("scheduled").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const interviewsRelations = relations(interviews, ({ one }) => ({
+  application: one(applications, {
+    fields: [interviews.applicationId],
+    references: [applications.id],
+  }),
+  interviewer: one(users, {
+    fields: [interviews.interviewerId],
+    references: [users.id],
+  }),
+}));
+
+export const insertInterviewSchema = createInsertSchema(interviews).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertInterview = z.infer<typeof insertInterviewSchema>;
+export type Interview = typeof interviews.$inferSelect;
+
+// Audit Logs for GDPR and security
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  action: text("action").notNull(),
+  details: text("details"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;
