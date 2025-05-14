@@ -64,11 +64,9 @@ export function Sidebar() {
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
       <div className="flex h-screen flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-[#FFFFFF] px-5">
         <div className="flex h-16 shrink-0 items-center justify-start space-x-2">
-          <div className="flex items-center justify-center rounded-lg bg-primary w-10 h-10">
-            <span className="text-lg font-bold text-white">G</span>
+            <img src="/uploads/OIP.jpeg" alt="GRO Logo" className="h-10 w-10 rounded-lg object-cover" />
+            <h1 className="text-xl font-semibold text-gray-900">GRO ATS</h1>
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">GRO ATS</h1>
-        </div>
         <nav className="mt-5 flex flex-1 flex-col">
           <ul className="flex flex-1 flex-col gap-y-1">
             {navigation.map((item) => (

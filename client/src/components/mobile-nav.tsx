@@ -56,22 +56,7 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
           <div className="flex items-center">
-            <div className="flex items-center justify-center p-1 bg-white rounded-md mr-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#0052CC"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6 text-primary"
-              >
-                <path d="M18 10.5L13.5 5.5 12 4 4 12 12 20 20 12 12 4"></path>
-                <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"></path>
-                <path d="M9.17 14.83a4 4 0 1 0 0-5.66"></path>
-              </svg>
-            </div>
+            <img src="/uploads/OIP.jpeg" alt="GRO Logo" className="h-8 w-8 rounded-md object-cover mr-2" />
             <span className="text-white font-semibold text-lg">GRO ATS</span>
           </div>
         </div>
