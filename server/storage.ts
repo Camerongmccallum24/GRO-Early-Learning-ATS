@@ -359,7 +359,9 @@ export class DatabaseStorage implements IStorage {
     const [interviewApplicationsResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(applications)
-      .where(sql`${applications.status} = 'interview' OR ${applications.status} = 'interviewed'`);
+      .where(
+        sql`${applications.status}::text IN ('interview', 'interviewed')`
+      );
     
     // Count positions filled (hired applications)
     const [filledResult] = await db

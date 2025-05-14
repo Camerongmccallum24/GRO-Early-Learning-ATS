@@ -39,6 +39,7 @@ export const applicationStatusEnum = pgEnum("application_status", [
   "applied",
   "in_review",
   "interview",
+  "interviewed",
   "offered",
   "hired",
   "rejected",

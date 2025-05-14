@@ -535,6 +535,7 @@ export default function Applications() {
                   <SelectItem value="applied">Applied</SelectItem>
                   <SelectItem value="in_review">In Review</SelectItem>
                   <SelectItem value="interview">Interview</SelectItem>
+                  <SelectItem value="interviewed">Interviewed</SelectItem>
                   <SelectItem value="offered">Offered</SelectItem>
                   <SelectItem value="hired">Hired</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
