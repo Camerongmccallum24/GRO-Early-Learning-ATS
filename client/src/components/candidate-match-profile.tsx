@@ -33,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 interface CandidateMatchProfileProps {
   candidateId: number;
   candidateName: string;
+  compact?: boolean;
 }
 
 interface MatchResult {
@@ -45,7 +46,7 @@ interface MatchResult {
   jobLocation?: string;
 }
 
-export function CandidateMatchProfile({ candidateId, candidateName }: CandidateMatchProfileProps) {
+export function CandidateMatchProfile({ candidateId, candidateName, compact = false }: CandidateMatchProfileProps) {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const { toast } = useToast();
   
@@ -108,7 +109,7 @@ export function CandidateMatchProfile({ candidateId, candidateName }: CandidateM
   
   // Helper to calculate a score for each domain
   const calculateDomainScore = (match: MatchResult, keywords: string[]) => {
-    if (!match) return 0;
+    if (!match) return 50;
     
     let score = match.score * 0.5; // Base score is half of the overall match
     
@@ -185,36 +186,38 @@ export function CandidateMatchProfile({ candidateId, candidateName }: CandidateM
   };
   
   return (
-    <Card className="mt-6 overflow-hidden border-primary/20">
-      <CardHeader className="bg-primary/5 flex flex-row items-center gap-3">
-        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-          <SparklesIcon className="h-4 w-4 text-primary" />
+    <Card className={`overflow-hidden border-primary/20 ${compact ? '' : 'mt-6'}`}>
+      <CardHeader className={`bg-primary/5 flex flex-row items-center gap-2 ${compact ? 'py-2 px-3' : ''}`}>
+        <div className={`${compact ? 'h-6 w-6' : 'h-8 w-8'} rounded-full bg-primary/10 flex items-center justify-center`}>
+          <SparklesIcon className={`${compact ? 'h-3 w-3' : 'h-4 w-4'} text-primary`} />
         </div>
         <div>
-          <CardTitle className="text-xl">AI-Powered Match Analysis</CardTitle>
-          <CardDescription>
-            See how well this candidate matches different positions using AI qualification analysis
-          </CardDescription>
+          <CardTitle className={compact ? "text-sm" : "text-xl"}>AI-Powered Match Analysis</CardTitle>
+          {!compact && (
+            <CardDescription>
+              See how well this candidate matches different positions using AI qualification analysis
+            </CardDescription>
+          )}
         </div>
       </CardHeader>
-      <CardContent className="pt-6">
-        <div className="flex flex-col md:flex-row gap-4 mb-6 items-start">
-          <div className="w-full md:w-64">
-            <h3 className="text-sm font-medium mb-2">Select Position to Analyze</h3>
+      <CardContent className={compact ? "py-2 px-3" : "pt-6"}>
+        <div className={`flex flex-col ${compact ? 'gap-2' : 'md:flex-row gap-4 mb-6'} items-start`}>
+          <div className={`w-full ${compact ? '' : 'md:w-64'}`}>
+            <h3 className={`${compact ? 'text-xs' : 'text-sm'} font-medium ${compact ? 'mb-1' : 'mb-2'}`}>Select Position to Analyze</h3>
             {isLoadingJobs ? (
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className={`${compact ? 'h-7' : 'h-10'} w-full`} />
             ) : (
               <Select 
                 value={selectedJobId || ""} 
                 onValueChange={setSelectedJobId}
                 disabled={isLoadingJobs}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a job position" />
+                <SelectTrigger className={`w-full ${compact ? 'h-7 text-xs' : ''}`}>
+                  <SelectValue placeholder={compact ? "Select job" : "Select a job position"} />
                 </SelectTrigger>
                 <SelectContent>
                   {jobPostings?.map((job: any) => (
-                    <SelectItem key={job.id} value={String(job.id)}>
+                    <SelectItem key={job.id} value={String(job.id)} className={compact ? "text-xs" : ""}>
                       {job.title}
                     </SelectItem>
                   ))}
@@ -225,72 +228,97 @@ export function CandidateMatchProfile({ candidateId, candidateName }: CandidateM
           
           <Button 
             variant="outline" 
-            className="gap-2"
+            className={`gap-1 ${compact ? 'h-7 text-xs py-0 px-2' : 'gap-2'}`}
             onClick={handleRefresh}
             disabled={!selectedJobId || isLoadingMatch}
           >
             {isLoadingMatch ? (
               <>
-                <Loader2Icon className="h-4 w-4 animate-spin" />
-                Analyzing...
+                <Loader2Icon className={`${compact ? 'h-3 w-3' : 'h-4 w-4'} animate-spin`} />
+                {compact ? "Analyzing..." : "Analyzing..."}
               </>
             ) : (
               <>
-                <SparklesIcon className="h-4 w-4" />
-                Refresh Analysis
+                <SparklesIcon className={compact ? "h-3 w-3" : "h-4 w-4"} />
+                {compact ? "Analyze" : "Refresh Analysis"}
               </>
             )}
           </Button>
         </div>
         
         {isLoadingMatch && selectedJobId ? (
-          <div className="py-8 flex flex-col items-center justify-center">
-            <Loader2Icon className="h-8 w-8 text-primary animate-spin mb-2" />
-            <p className="text-muted-foreground">Analyzing candidate qualifications...</p>
+          <div className={`${compact ? 'py-3' : 'py-8'} flex flex-col items-center justify-center`}>
+            <Loader2Icon className={`${compact ? 'h-5 w-5 mb-1' : 'h-8 w-8 mb-2'} text-primary animate-spin`} />
+            <p className={`text-muted-foreground ${compact ? 'text-xs' : ''}`}>Analyzing candidate qualifications...</p>
           </div>
         ) : matchError ? (
-          <div className="py-8 text-center">
-            <XCircleIcon className="h-8 w-8 text-destructive mx-auto mb-2" />
-            <h3 className="font-medium text-lg">Analysis Error</h3>
-            <p className="text-muted-foreground mb-4">
+          <div className={`${compact ? 'py-3' : 'py-8'} text-center`}>
+            <XCircleIcon className={`${compact ? 'h-5 w-5 mb-1' : 'h-8 w-8 mb-2'} text-destructive mx-auto`} />
+            <h3 className={`font-medium ${compact ? 'text-sm' : 'text-lg'}`}>Analysis Error</h3>
+            <p className={`text-muted-foreground ${compact ? 'text-xs mb-2' : 'mb-4'}`}>
               {(matchError as Error)?.message || "Failed to analyze candidate match"}
             </p>
-            <Button variant="outline" onClick={handleRefresh}>Try Again</Button>
+            <Button variant="outline" onClick={handleRefresh} className={compact ? 'text-xs h-7 py-0' : ''}>Try Again</Button>
+          </div>
+        ) : !matchData && !selectedJobId ? (
+          <div className={`${compact ? 'py-3' : 'py-8'} text-center`}>
+            <SparklesIcon className={`${compact ? 'h-5 w-5 mb-1' : 'h-8 w-8 mb-2'} text-primary/40 mx-auto`} />
+            <h3 className={`font-medium ${compact ? 'text-sm' : 'text-lg'}`}>Select a Position</h3>
+            <p className={`text-muted-foreground ${compact ? 'text-xs' : ''}`}>
+              Choose a job position to analyze this candidate's qualifications
+            </p>
           </div>
         ) : matchData && selectedJobId ? (
-          <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className={`${compact ? 'space-y-3' : 'space-y-6'}`}>
+            <div className={`flex flex-col ${compact ? 'gap-2' : 'md:flex-row gap-4'} items-center`}>
               <div className="flex-1">
-                <h3 className="text-lg font-medium mb-1 flex items-center gap-2">
-                  <BriefcaseIcon className="h-5 w-5 text-muted-foreground" />
+                <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-medium ${compact ? 'mb-0.5' : 'mb-1'} flex items-center gap-1`}>
+                  <BriefcaseIcon className={`${compact ? 'h-3.5 w-3.5' : 'h-5 w-5'} text-muted-foreground`} />
                   {matchData.jobTitle}
-                  {matchData.jobLocation && (
+                  {matchData.jobLocation && !compact && (
                     <span className="text-sm font-normal text-muted-foreground">
                       ({matchData.jobLocation})
                     </span>
                   )}
                 </h3>
-                <p className="text-muted-foreground text-sm mb-3">{matchData.comments}</p>
                 
-                <div className="flex items-center gap-3">
-                  <div className={`px-4 py-2 rounded-full border font-medium ${getScoreColor(matchData.score)}`}>
+                {!compact && (
+                  <p className="text-muted-foreground text-sm mb-3">{matchData.comments}</p>
+                )}
+                
+                <div className="flex items-center gap-2">
+                  <div className={`${compact ? 'px-2 py-1 text-xs' : 'px-4 py-2'} rounded-full border font-medium ${getScoreColor(matchData.score)}`}>
                     {matchData.score}% Match
                   </div>
-                  <span className="text-sm font-medium">{getScoreRating(matchData.score)}</span>
+                  <span className={`${compact ? 'text-xs' : 'text-sm'} font-medium`}>{getScoreRating(matchData.score)}</span>
                 </div>
               </div>
               
-              <div className="h-48 w-full md:w-64 flex-shrink-0">
+              <div className={`${compact ? 'h-32 w-full' : 'h-48 w-full md:w-64'} flex-shrink-0`}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={getRadarData(matchData)}>
+                  <RadarChart cx="50%" cy="50%" outerRadius={compact ? "70%" : "80%"} data={getRadarData(matchData)}>
                     <PolarGrid stroke="#e2e8f0" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 11 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#64748b' }} />
+                    <PolarAngleAxis 
+                      dataKey="subject" 
+                      tick={{ 
+                        fill: '#64748b', 
+                        fontSize: compact ? 8 : 11,
+                      }} 
+                    />
+                    <PolarRadiusAxis 
+                      angle={30} 
+                      domain={[0, 100]} 
+                      tick={{ 
+                        fill: '#64748b',
+                        fontSize: compact ? 8 : 11,
+                      }}
+                      tickCount={compact ? 3 : 5}
+                    />
                     <Radar
                       name="Skills"
                       dataKey="A"
-                      stroke="#0052CC"
-                      fill="#0052CC"
+                      stroke="#bcd7d0"
+                      fill="#bcd7d0"
                       fillOpacity={0.5}
                     />
                   </RadarChart>
@@ -298,161 +326,120 @@ export function CandidateMatchProfile({ candidateId, candidateName }: CandidateM
               </div>
             </div>
             
-            <Tabs defaultValue="skills" className="w-full">
-              <TabsList>
-                <TabsTrigger value="skills">Skills Analysis</TabsTrigger>
-                <TabsTrigger value="qualifications">Qualification Breakdown</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="skills" className="pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2 flex items-center gap-1.5">
-                      <CheckCircleIcon className="h-4 w-4 text-green-600" />
-                      Matched Skills ({matchData.matchedSkills ? matchData.matchedSkills.length : 0})
-                    </h4>
-                    <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md min-h-[100px]">
-                      {matchData.matchedSkills && matchData.matchedSkills.length > 0 ? (
-                        matchData.matchedSkills.map(skill => renderSkill(skill, true))
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No matched skills identified</p>
-                      )}
+            {compact ? (
+              <div className="space-y-2">
+                <div className="bg-gray-50 p-2 rounded-md">
+                  <div className="grid grid-cols-2 gap-1 mb-1">
+                    <div>
+                      <p className="text-[10px] font-medium">Skills Match</p>
+                      <div className="flex items-center gap-1">
+                        <progress className="w-full h-1" value={getRadarData(matchData)[2].A} max="100" />
+                        <span className="text-[10px]">{getRadarData(matchData)[2].A.toFixed(0)}%</span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium mb-2 flex items-center gap-1.5">
-                      <XCircleIcon className="h-4 w-4 text-amber-600" />
-                      Missing Skills ({matchData.missingSkills ? matchData.missingSkills.length : 0})
-                    </h4>
-                    <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md min-h-[100px]">
-                      {matchData.missingSkills && matchData.missingSkills.length > 0 ? (
-                        matchData.missingSkills.map(skill => renderSkill(skill, false))
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No missing skills identified</p>
-                      )}
+                    <div>
+                      <p className="text-[10px] font-medium">Experience</p>
+                      <div className="flex items-center gap-1">
+                        <progress className="w-full h-1" value={getRadarData(matchData)[1].A} max="100" />
+                        <span className="text-[10px]">{getRadarData(matchData)[1].A.toFixed(0)}%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="qualifications" className="space-y-4 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Education & Certifications */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium flex items-center gap-1.5">
-                      <GraduationCapIcon className="h-4 w-4 text-primary" />
-                      Education & Certifications
-                    </h4>
-                    <div className="p-3 bg-gray-50 rounded-md">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm">Qualification Match</span>
-                        <span className="text-sm font-medium">
-                          {getRadarData(matchData)[0].A.toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress value={getRadarData(matchData)[0].A} className="h-2 mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        Analysis of educational background and certifications compared to job requirements.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Experience */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium flex items-center gap-1.5">
-                      <TrendingUpIcon className="h-4 w-4 text-blue-600" />
-                      Experience
-                    </h4>
-                    <div className="p-3 bg-gray-50 rounded-md">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm">Experience Match</span>
-                        <span className="text-sm font-medium">
-                          {getRadarData(matchData)[1].A.toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress value={getRadarData(matchData)[1].A} className="h-2 mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        Evaluation of relevant work history and professional experience for this role.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Technical Skills */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium flex items-center gap-1.5">
-                      <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
-                      Technical Skills
-                    </h4>
-                    <div className="p-3 bg-gray-50 rounded-md">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm">Technical Match</span>
-                        <span className="text-sm font-medium">
-                          {getRadarData(matchData)[2].A.toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress value={getRadarData(matchData)[2].A} className="h-2 mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        Assessment of technical abilities and job-specific skills required for this position.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Soft Skills */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium flex items-center gap-1.5">
-                      <MoveUpIcon className="h-4 w-4 text-violet-600" />
-                      Soft Skills
-                    </h4>
-                    <div className="p-3 bg-gray-50 rounded-md">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm">Soft Skills Match</span>
-                        <span className="text-sm font-medium">
-                          {getRadarData(matchData)[3].A.toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress value={getRadarData(matchData)[3].A} className="h-2 mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        Evaluation of communication, teamwork, and interpersonal abilities.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Cultural Fit */}
-                  <div className="space-y-2 md:col-span-2">
-                    <h4 className="text-sm font-medium flex items-center gap-1.5">
-                      <HeartHandshakeIcon className="h-4 w-4 text-rose-600" />
-                      Cultural Fit
-                    </h4>
-                    <div className="p-3 bg-gray-50 rounded-md">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm">Cultural Alignment</span>
-                        <span className="text-sm font-medium">
-                          {getRadarData(matchData)[4].A.toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress value={getRadarData(matchData)[4].A} className="h-2 mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        Assessment of alignment with GRO Early Learning's values of growth, care, and community.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              </div>
+            ) : (
+              <Tabs defaultValue="skills" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="skills">Skills Analysis</TabsTrigger>
+                  <TabsTrigger value="qualifications">Qualification Breakdown</TabsTrigger>
+                </TabsList>
                 
-                <div className="mt-4 p-3 bg-blue-50 text-blue-800 rounded-md text-sm">
-                  <p className="font-medium mb-1">AI Analysis Note</p>
-                  <p>This qualification breakdown is generated using AI analysis of the candidate's profile compared to the job requirements. The scoring reflects both explicit and inferred skills based on available information.</p>
-                </div>
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="skills" className="pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                        <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                        Matched Skills ({matchData.matchedSkills ? matchData.matchedSkills.length : 0})
+                      </h4>
+                      <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md min-h-[100px]">
+                        {matchData.matchedSkills && matchData.matchedSkills.length > 0 ? (
+                          matchData.matchedSkills.map(skill => renderSkill(skill, true))
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No matched skills identified</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                        <XCircleIcon className="h-4 w-4 text-amber-600" />
+                        Missing Skills ({matchData.missingSkills ? matchData.missingSkills.length : 0})
+                      </h4>
+                      <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md min-h-[100px]">
+                        {matchData.missingSkills && matchData.missingSkills.length > 0 ? (
+                          matchData.missingSkills.map(skill => renderSkill(skill, false))
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No missing skills identified</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="qualifications" className="space-y-4 pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Education & Certifications */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium flex items-center gap-1.5">
+                        <GraduationCapIcon className="h-4 w-4 text-primary" />
+                        Education & Certifications
+                      </h4>
+                      <div className="p-3 bg-gray-50 rounded-md">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm">Qualification Match</span>
+                          <span className="text-sm font-medium">
+                            {getRadarData(matchData)[0].A.toFixed(0)}%
+                          </span>
+                        </div>
+                        <Progress value={getRadarData(matchData)[0].A} className="h-2 mb-2" />
+                        <p className="text-xs text-muted-foreground">
+                          Analysis of educational background and certifications compared to job requirements.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Experience */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium flex items-center gap-1.5">
+                        <TrendingUpIcon className="h-4 w-4 text-blue-600" />
+                        Experience
+                      </h4>
+                      <div className="p-3 bg-gray-50 rounded-md">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm">Experience Match</span>
+                          <span className="text-sm font-medium">
+                            {getRadarData(matchData)[1].A.toFixed(0)}%
+                          </span>
+                        </div>
+                        <Progress value={getRadarData(matchData)[1].A} className="h-2 mb-2" />
+                        <p className="text-xs text-muted-foreground">
+                          Evaluation of relevant work history and professional experience for this role.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
           </div>
         ) : (
-          <div className="py-8 text-center">
-            <SparklesIcon className="h-8 w-8 text-primary/40 mx-auto mb-2" />
-            <h3 className="font-medium text-lg">Select a Position</h3>
-            <p className="text-muted-foreground">
-              Choose a position to see how well {candidateName} matches the requirements
+          <div className={`${compact ? 'py-3' : 'py-8'} text-center`}>
+            <SparklesIcon className={`${compact ? 'h-5 w-5 mb-1' : 'h-8 w-8 mb-2'} text-primary/40 mx-auto`} />
+            <h3 className={`font-medium ${compact ? 'text-sm' : 'text-lg'}`}>No Analysis Available</h3>
+            <p className={`text-muted-foreground ${compact ? 'text-xs mb-2' : 'mb-4'}`}>
+              Unable to generate a match analysis at this time
             </p>
+            <Button variant="outline" onClick={handleRefresh} className={compact ? 'text-xs h-7 py-0' : ''}>Try Again</Button>
           </div>
         )}
       </CardContent>
