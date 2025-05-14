@@ -14,15 +14,11 @@ if (!process.env.REPLIT_DOMAINS) {
 
 const getOidcConfig = memoize(
   async () => {
-    // Use hardcoded OIDC endpoints for Replit to avoid any discovery issues
-    return new client.Issuer({
-      issuer: 'https://replit.com/oidc',
-      authorization_endpoint: 'https://replit.com/oidc/auth',
-      token_endpoint: 'https://replit.com/oidc/token',
-      jwks_uri: 'https://replit.com/oidc/jwks',
-      userinfo_endpoint: 'https://replit.com/oidc/userinfo',
-      end_session_endpoint: 'https://replit.com/oidc/logout',
-    });
+    // Return to the standard discovery approach
+    return await client.discovery(
+      new URL("https://replit.com/oidc"),
+      process.env.REPL_ID!
+    );
   },
   { maxAge: 3600 * 1000 }
 );

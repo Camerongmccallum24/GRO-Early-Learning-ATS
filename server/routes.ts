@@ -24,7 +24,7 @@ import fs from "fs";
 import { parseResume } from "./resume-parser";
 import { z } from "zod";
 import { upsertUserSchema, insertJobPostingSchema, insertCandidateSchema, insertApplicationSchema } from "@shared/schema";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, getUser } from "./simpleReplitAuth";
 
 // Define upload directory and setup multer
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -68,23 +68,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      console.log("Authenticated user request, user claims:", req.user?.claims);
-      const userId = req.user.claims.sub;
+      console.log("Authenticated user request, user:", req.user);
+      const userId = req.user.id;
       let user = await storage.getUser(userId);
-      
-      // If no user found in DB, automatically create one from claims
-      if (!user) {
-        console.log("User not found in DB, creating from claims");
-        user = await storage.upsertUser({
-          id: userId,
-          email: req.user.claims.email,
-          firstName: req.user.claims.first_name,
-          lastName: req.user.claims.last_name,
-          profileImageUrl: req.user.claims.profile_image_url,
-          role: "hr_admin", // Default role for all Replit Auth users
-        });
-        console.log("Created new user:", user);
-      }
       
       // Create audit log
       await storage.createAuditLog({
@@ -96,11 +82,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       console.log("Returning user:", user);
-      res.json(user);
+      res.json(req.user);
     } catch (error) {
-      console.error("Error fetching/creating user:", error);
+      console.error("Error fetching user:", error);
       res.status(500).json({ 
-        message: "Failed to fetch or create user", 
+        message: "Failed to fetch user", 
         error: String(error) 
       });
     }
@@ -157,14 +143,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the current user as the creator
       const jobPostingWithUser = {
         ...jobPostingData,
-        createdById: req.user?.claims?.sub,
+        createdById: req.user?.id,
       };
       
       const newJobPosting = await storage.createJobPosting(jobPostingWithUser);
       
       // Create audit log
       await storage.createAuditLog({
-        userId: req.user?.claims?.sub,
+        userId: req.user?.id,
         action: "create_job_posting",
         details: `Created job posting ID: ${newJobPosting.id}`,
         ipAddress: req.ip,
@@ -196,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create audit log
       await storage.createAuditLog({
-        userId: req.user?.claims?.sub,
+        userId: req.user?.id,
         action: "update_job_posting",
         details: `Updated job posting ID: ${id}`,
         ipAddress: req.ip,
