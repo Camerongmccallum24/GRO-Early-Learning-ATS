@@ -22,9 +22,9 @@ export function Sidebar() {
     },
     {
       name: "Job Postings",
-      href: "/job-postings",
+      href: "/jobs",
       icon: BriefcaseIcon,
-      active: location === "/job-postings" || location.startsWith("/job-posting/"),
+      active: location === "/jobs" || location.startsWith("/jobs/"),
     },
     {
       name: "Applications",
