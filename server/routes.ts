@@ -445,9 +445,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/applications/:id/send-email", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const { subject, message } = req.body;
+      const { subject, message, useAI, status, additionalContext } = req.body;
       
-      if (!subject || !message) {
+      // If useAI is false or not provided, subject and message are required
+      if (!useAI && (!subject || !message)) {
         return res.status(400).json({ message: "Subject and message are required" });
       }
       
@@ -462,14 +463,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Candidate email not found" });
       }
       
-      // Import the Gmail service instead of SendGrid service
+      let emailSubject = subject;
+      let emailMessage = message;
+      
+      // If useAI is true and OpenAI API key is available, generate email content
+      if (useAI && process.env.OPENAI_API_KEY) {
+        try {
+          console.log("Generating AI email response...");
+          // Import the OpenAI service
+          const { generatePersonalizedEmail } = await import('./openai-service');
+          
+          // Generate personalized email
+          const generatedEmail = await generatePersonalizedEmail(
+            application.candidate?.name || "Candidate",
+            application.jobPosting?.title || "Position",
+            status || application.status,
+            additionalContext
+          );
+          
+          emailSubject = generatedEmail.subject;
+          emailMessage = generatedEmail.body;
+          console.log("AI email generation successful");
+        } catch (aiError) {
+          console.error("AI email generation error:", aiError);
+          // If AI generation fails and no fallback content is provided
+          if (!subject || !message) {
+            return res.status(500).json({ 
+              message: "Failed to generate email with AI and no fallback content provided" 
+            });
+          }
+          // Continue with provided subject and message as fallback
+        }
+      }
+      
+      // Import the Gmail service 
       const { sendCustomEmail } = await import('./gmail-service');
       
       // Send the custom email
       const emailSent = await sendCustomEmail(
         application.candidate.email,
-        subject,
-        message,
+        emailSubject,
+        emailMessage,
         Number(id)
       );
       
@@ -482,12 +516,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         candidateId: application.candidateId,
         applicationId: Number(id),
         type: "email",
-        subject,
-        message,
+        subject: emailSubject,
+        message: emailMessage,
         direction: "outbound",
         initiatedBy: req.user?.id,
         metadata: { 
-          deliveryStatus: "sent" 
+          deliveryStatus: "sent",
+          aiGenerated: useAI && process.env.OPENAI_API_KEY ? true : false
         }
       });
       
