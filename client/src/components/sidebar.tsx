@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import groLogo from "../assets/gro-logo.png";
 
 // Define a type for the user object
 interface AuthUser {
@@ -162,12 +163,16 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
         <div className="flex h-screen flex-grow flex-col overflow-y-auto">
           {/* Header with logo and collapse toggle */}
           <div className={cn(
-            "flex h-16 shrink-0 items-center border-b border-gray-200 px-4",
+            "flex h-20 shrink-0 items-center border-b border-gray-200 px-4",
             isCollapsed ? "justify-center" : "justify-between"
           )}>
-            <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-start space-x-2")}>
-              <img src="/uploads/OIP.jpeg" alt="GRO Logo" className="h-10 w-10 rounded-lg object-cover shrink-0" />
-              {!isCollapsed && <h1 className="text-xl font-semibold text-gray-900">GRO ATS</h1>}
+            <div className={cn("flex flex-col items-center", isCollapsed ? "justify-center" : "justify-start")}>
+              <img src={groLogo} alt="GRO Early Learning" className="h-12 object-contain" />
+              {!isCollapsed && 
+                <div className="mt-1">
+                  <span className="text-xs font-medium text-gray-600">Applicant Tracking System</span>
+                </div>
+              }
             </div>
             
             {/* Toggle collapse button - desktop only */}
