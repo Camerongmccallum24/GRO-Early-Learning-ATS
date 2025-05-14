@@ -10,6 +10,7 @@ import JobPostingForm from "@/pages/job-posting-form";
 import Candidates from "@/pages/candidates";
 import Applications from "@/pages/applications";
 import Settings from "@/pages/settings";
+import HowToGuides from "@/pages/how-to-guides";
 import Login from "@/pages/login";
 import { Sidebar } from "@/components/sidebar";
 import { useState, useEffect } from "react";
@@ -146,6 +147,16 @@ function Router() {
         )}
       </Route>
 
+      <Route path="/guides">
+        {() => (
+          <ProtectedRoute>
+            <Layout>
+              <HowToGuides />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      </Route>
+      
       <Route path="/settings">
         {() => (
           <ProtectedRoute>

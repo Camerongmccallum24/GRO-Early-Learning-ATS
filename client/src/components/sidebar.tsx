@@ -7,7 +7,8 @@ import {
   UserIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  MenuIcon
+  MenuIcon,
+  BookOpenIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -105,6 +106,12 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
       href: "/candidates",
       icon: UserIcon,
       active: location === "/candidates",
+    },
+    {
+      name: "How To Guides",
+      href: "/guides",
+      icon: BookOpenIcon,
+      active: location === "/guides",
     },
     {
       name: "Settings",
