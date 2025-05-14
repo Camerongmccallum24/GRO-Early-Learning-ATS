@@ -132,6 +132,16 @@ function Router() {
           </ProtectedRoute>
         )}
       </Route>
+
+      <Route path="/settings">
+        {() => (
+          <ProtectedRoute>
+            <Layout>
+              <Settings />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      </Route>
       
       <Route component={NotFound} />
     </Switch>
