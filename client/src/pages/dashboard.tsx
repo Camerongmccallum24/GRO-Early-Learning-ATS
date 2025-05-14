@@ -1,13 +1,40 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { OverviewCard } from "@/components/overview-card";
 import { ApplicationStatusBadge } from "@/components/application-status-badge";
 import { formatDate } from "@/lib/utils";
-import { Briefcase, UserPlus, Calendar, Check, ChevronRight, SparklesIcon, BarChart3Icon } from "lucide-react";
+import { 
+  Briefcase, 
+  UserPlus, 
+  Calendar, 
+  Check, 
+  ChevronRight, 
+  SparklesIcon, 
+  BarChart3Icon,
+  MapPinIcon,
+  BuildingIcon
+} from "lucide-react";
 import { Link } from "wouter";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  Sector
+} from "recharts";
 
 export default function Dashboard() {
+  // State for active pie chart sections
+  const [activeLocationIndex, setActiveLocationIndex] = useState(-1);
+  const [activePositionIndex, setActivePositionIndex] = useState(-1);
+  
   // Fetch dashboard statistics
   const { data: stats, isLoading: isStatsLoading } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -18,15 +45,49 @@ export default function Dashboard() {
     queryKey: ["/api/dashboard/recent-applications"],
   });
   
-  const locationChartData = stats?.applicationsByLocation.map((item: any) => ({
+  // Prepare chart data with colors
+  const LOCATION_COLORS = ['#0052CC', '#00B8D9', '#36B37E', '#6554C0', '#FF5630', '#FFAB00'];
+  const POSITION_COLORS = ['#00875A', '#0052CC', '#6554C0', '#FF5630', '#FFAB00', '#253858'];
+  
+  const locationChartData = stats?.applicationsByLocation.map((item: any, index: number) => ({
     name: item.location || "Other",
     value: item.count,
+    color: LOCATION_COLORS[index % LOCATION_COLORS.length]
   })) || [];
   
-  const positionChartData = stats?.applicationsByPosition.map((item: any) => ({
+  const positionChartData = stats?.applicationsByPosition.map((item: any, index: number) => ({
     name: item.position || "Other",
     value: item.count,
+    color: POSITION_COLORS[index % POSITION_COLORS.length]
   })) || [];
+  
+  // Custom renderer for active pie sector
+  const renderActiveShape = (props: any) => {
+    const { 
+      cx, cy, innerRadius, outerRadius, startAngle, endAngle,
+      fill, payload, percent, value
+    } = props;
+  
+    return (
+      <g>
+        <text x={cx} y={cy - 10} dy={8} textAnchor="middle" fill="#172B4D" className="text-sm font-medium">
+          {payload.name}
+        </text>
+        <text x={cx} y={cy + 10} dy={8} textAnchor="middle" fill="#172B4D" className="text-xs">
+          {value} ({(percent * 100).toFixed(0)}%)
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 5}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+      </g>
+    );
+  };
 
   return (
     <div className="space-y-6 p-4 md:p-6 pb-16">
@@ -226,9 +287,15 @@ export default function Dashboard() {
         {/* Applications by Location */}
         <Card className="shadow overflow-hidden">
           <CardHeader className="px-4 py-5 border-b border-gray-200 sm:px-6">
-            <CardTitle className="text-lg leading-6 font-medium">Applications by Location</CardTitle>
+            <div className="flex items-center space-x-2">
+              <MapPinIcon className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg leading-6 font-medium">Applications by Location</CardTitle>
+            </div>
+            <CardDescription className="pt-1 text-xs">
+              Distribution of applications across different center locations
+            </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 h-64">
+          <CardContent className="p-6 h-72">
             {isStatsLoading ? (
               <div className="h-full flex items-center justify-center">
                 <p className="text-gray-500">Loading chart data...</p>
@@ -238,18 +305,55 @@ export default function Dashboard() {
                 <p className="text-gray-500">No location data available</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={locationChartData}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#0052CC" barSize={30} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="h-full">
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      activeIndex={activeLocationIndex}
+                      activeShape={renderActiveShape}
+                      data={locationChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      dataKey="value"
+                      onMouseEnter={(_, index) => setActiveLocationIndex(index)}
+                      onMouseLeave={() => setActiveLocationIndex(-1)}
+                    >
+                      {locationChartData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.color}
+                          stroke="#fff"
+                          strokeWidth={1}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value) => [`${value} applications`, 'Count']}
+                      labelFormatter={(label) => `Location: ${label}`}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {locationChartData.map((entry, index) => (
+                    <div 
+                      key={`legend-${index}`} 
+                      className="flex items-center text-xs"
+                      onMouseEnter={() => setActiveLocationIndex(index)}
+                      onMouseLeave={() => setActiveLocationIndex(-1)}
+                    >
+                      <div 
+                        className="w-3 h-3 mr-2 rounded-sm" 
+                        style={{ backgroundColor: entry.color }}
+                      />
+                      <span className="truncate">{entry.name}</span>
+                      <span className="ml-1 text-gray-500">({entry.value})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -257,9 +361,15 @@ export default function Dashboard() {
         {/* Applications by Position */}
         <Card className="shadow overflow-hidden">
           <CardHeader className="px-4 py-5 border-b border-gray-200 sm:px-6">
-            <CardTitle className="text-lg leading-6 font-medium">Applications by Position</CardTitle>
+            <div className="flex items-center space-x-2">
+              <BuildingIcon className="h-5 w-5 text-secondary" />
+              <CardTitle className="text-lg leading-6 font-medium">Applications by Position</CardTitle>
+            </div>
+            <CardDescription className="pt-1 text-xs">
+              Number of applications received for each job position
+            </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 h-64">
+          <CardContent className="p-6 h-72">
             {isStatsLoading ? (
               <div className="h-full flex items-center justify-center">
                 <p className="text-gray-500">Loading chart data...</p>
@@ -269,23 +379,72 @@ export default function Dashboard() {
                 <p className="text-gray-500">No position data available</p>
               </div>
             ) : (
-              <div className="w-full h-full">
-                <div className="w-full h-full flex flex-col justify-center space-y-4">
-                  {positionChartData.map((item: any, index: number) => (
-                    <div key={index} className="flex items-center">
-                      <div className="flex-1 mr-4">
-                        <p className="text-sm text-gray-900">{item.name}</p>
-                      </div>
-                      <div className="w-1/2 bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="bg-primary h-3 rounded-full" 
-                          style={{ 
-                            width: `${Math.min(100, (item.value / Math.max(...positionChartData.map((d: any) => d.value))) * 100)}%` 
-                          }}
-                        ></div>
-                      </div>
-                      <div className="ml-4 w-8 text-right">
-                        <p className="text-sm text-gray-500">{item.value}</p>
+              <div className="h-full flex flex-col">
+                <div className="flex-1">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart
+                      data={positionChartData}
+                      margin={{ top: 20, right: 10, left: 0, bottom: 5 }}
+                    >
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        interval={0}
+                        height={50}
+                        angle={-45}
+                        textAnchor="end"
+                      />
+                      <YAxis 
+                        tickLine={false} 
+                        axisLine={false}
+                        tick={{ fontSize: 11 }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
+                        formatter={(value) => [`${value} applications`, 'Count']}
+                        labelFormatter={(label) => `Position: ${label}`}
+                      />
+                      <Bar 
+                        dataKey="value" 
+                        onMouseEnter={(_, index) => setActivePositionIndex(index)}
+                        onMouseLeave={() => setActivePositionIndex(-1)}
+                      >
+                        {positionChartData.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={index === activePositionIndex ? entry.color : `${entry.color}99`}
+                            radius={[4, 4, 0, 0]}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="mt-3 space-y-3">
+                  {positionChartData.map((item, index) => (
+                    <div 
+                      key={`position-${index}`} 
+                      className="flex items-center text-xs"
+                      onMouseEnter={() => setActivePositionIndex(index)}
+                      onMouseLeave={() => setActivePositionIndex(-1)}
+                    >
+                      <div className="w-full">
+                        <div className="flex justify-between mb-1">
+                          <span className="font-medium" style={{ color: item.color }}>{item.name}</span>
+                          <span className="text-gray-500">{item.value} applications</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2">
+                          <div 
+                            className="h-2 rounded-full transition-all duration-300" 
+                            style={{ 
+                              width: `${Math.min(100, (item.value / Math.max(...positionChartData.map((d: any) => d.value))) * 100)}%`,
+                              backgroundColor: index === activePositionIndex ? item.color : `${item.color}80`
+                            }}
+                          ></div>
+                        </div>
                       </div>
                     </div>
                   ))}
