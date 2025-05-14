@@ -1,18 +1,14 @@
 import type { Express, Request as ExpressRequest, Response } from "express";
 
-// Extended Request type to include user from Replit Auth
+// Extended Request type to include user
 interface Request extends ExpressRequest {
   user?: {
-    claims: {
-      sub: string;
-      email?: string;
-      first_name?: string;
-      last_name?: string;
-      profile_image_url?: string;
-    };
-    access_token?: string;
-    refresh_token?: string;
-    expires_at?: number;
+    id: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    profileImageUrl?: string;
+    role?: string;
   };
   isAuthenticated(): boolean;
 }
@@ -76,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createAuditLog({
         userId: userId,
         action: "login",
-        details: "User authenticated via Replit Auth",
+        details: "User authenticated via development auth",
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
       });
@@ -213,7 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create audit log
       await storage.createAuditLog({
-        userId: req.user?.claims?.sub,
+        userId: req.user?.id,
         action: "delete_job_posting",
         details: `Deleted job posting ID: ${id}`,
         ipAddress: req.ip,
@@ -371,7 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create audit log
       await storage.createAuditLog({
-        userId: req.user?.claims?.sub,
+        userId: req.user?.id,
         action: "update_application_status",
         details: `Updated application ID: ${id} status to: ${status}`,
         ipAddress: req.ip,
