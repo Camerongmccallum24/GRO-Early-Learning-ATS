@@ -13,9 +13,9 @@ interface JobFiltersProps {
 }
 
 export function JobFilters({ onFilterChange }: JobFiltersProps) {
-  const [location, setLocation] = useState<string>("");
-  const [position, setPosition] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+  const [location, setLocation] = useState<string>("all");
+  const [position, setPosition] = useState<string>("all");
+  const [status, setStatus] = useState<string>("all");
   
   // Fetch locations
   const { data: locations = [] } = useQuery({
@@ -34,9 +34,9 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
   
   useEffect(() => {
     onFilterChange({
-      location: location ? Number(location) : "",
-      position,
-      status,
+      location: location === "all" ? "" : Number(location),
+      position: position === "all" ? "" : position,
+      status: status === "all" ? "" : status,
     });
   }, [location, position, status, onFilterChange]);
   
@@ -53,7 +53,7 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
                 <SelectValue placeholder="All Locations" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Locations</SelectItem>
+                <SelectItem value="all">All Locations</SelectItem>
                 {locations.map((loc: any) => (
                   <SelectItem key={loc.id} value={loc.id.toString()}>
                     {loc.name}
@@ -72,7 +72,7 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
                 <SelectValue placeholder="All Positions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Positions</SelectItem>
+                <SelectItem value="all">All Positions</SelectItem>
                 {uniquePositions.map((pos: string) => (
                   <SelectItem key={pos} value={pos}>
                     {pos}
@@ -91,7 +91,7 @@ export function JobFilters({ onFilterChange }: JobFiltersProps) {
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="closed">Closed</SelectItem>

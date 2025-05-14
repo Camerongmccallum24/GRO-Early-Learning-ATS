@@ -37,8 +37,8 @@ import {
 
 export default function Applications() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [applicationDetail, setApplicationDetail] = useState<any>(null);
   const [updateStatusDialog, setUpdateStatusDialog] = useState<{ id: number, status: string } | null>(null);
@@ -283,7 +283,7 @@ export default function Applications() {
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="applied">Applied</SelectItem>
                   <SelectItem value="in_review">In Review</SelectItem>
                   <SelectItem value="interview">Interview</SelectItem>
@@ -303,7 +303,7 @@ export default function Applications() {
                   <SelectValue placeholder="All Locations" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Locations</SelectItem>
+                  <SelectItem value="all">All Locations</SelectItem>
                   {locations.map((location: any) => (
                     <SelectItem key={location.id} value={location.id.toString()}>
                       {location.name}
