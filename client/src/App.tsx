@@ -9,6 +9,7 @@ import JobPostings from "@/pages/job-postings";
 import JobPostingForm from "@/pages/job-posting-form";
 import Candidates from "@/pages/candidates";
 import Applications from "@/pages/applications";
+import Login from "@/pages/login";
 import { Sidebar } from "@/components/sidebar";
 import { MobileNav } from "@/components/mobile-nav";
 import { useState, useEffect } from "react";
@@ -29,17 +30,26 @@ function LoadingAuth() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+  const [, navigate] = useLocation();
   const [location] = useLocation();
 
   useEffect(() => {
     setIsMobileNavOpen(false);
   }, [location]);
 
-  if (!isAuthenticated) {
-    // Redirect to Replit Auth login
-    window.location.href = '/api/login';
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  if (isLoading) {
     return <LoadingAuth />;
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will be redirected by the useEffect
   }
 
   return (
@@ -65,15 +75,20 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   if (isLoading) {
     return <LoadingAuth />;
   }
 
   if (!isAuthenticated) {
-    // Redirect to Replit Auth login
-    window.location.href = '/api/login';
-    return null;
+    return null; // Will be redirected by the useEffect
   }
 
   return <>{children}</>;
@@ -83,10 +98,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login">
-        {() => {
-          window.location.href = '/api/login';
-          return <LoadingAuth />;
-        }}
+        {() => <Login />}
       </Route>
       
       <Route path="/">

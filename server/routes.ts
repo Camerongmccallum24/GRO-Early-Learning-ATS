@@ -68,10 +68,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
+      console.log("Authenticated user request, user claims:", req.user?.claims);
       const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      let user = await storage.getUser(userId);
+      
+      // If no user found in DB, automatically create one from claims
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        console.log("User not found in DB, creating from claims");
+        user = await storage.upsertUser({
+          id: userId,
+          email: req.user.claims.email,
+          firstName: req.user.claims.first_name,
+          lastName: req.user.claims.last_name,
+          profileImageUrl: req.user.claims.profile_image_url,
+          role: "hr_admin", // Default role for all Replit Auth users
+        });
+        console.log("Created new user:", user);
       }
       
       // Create audit log
@@ -83,10 +95,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.headers["user-agent"],
       });
       
+      console.log("Returning user:", user);
       res.json(user);
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      console.error("Error fetching/creating user:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch or create user", 
+        error: String(error) 
+      });
     }
   });
   

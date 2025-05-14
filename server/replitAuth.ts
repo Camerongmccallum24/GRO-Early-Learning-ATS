@@ -27,7 +27,7 @@ export function getSession() {
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true, // Create table if it doesn't exist
     ttl: sessionTtl,
     tableName: "sessions",
   });
@@ -36,11 +36,13 @@ export function getSession() {
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    name: "ats_session", // Custom cookie name
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to false for development
       sameSite: 'lax',
       maxAge: sessionTtl,
+      path: '/',
     },
   });
 }
@@ -72,7 +74,8 @@ export async function setupAuth(app: Express) {
   console.log("Setting up Auth with REPL_ID:", process.env.REPL_ID);
   console.log("REPLIT_DOMAINS:", process.env.REPLIT_DOMAINS); 
   
-  app.set("trust proxy", 1);
+  // Trust all proxies in the Replit environment
+  app.set("trust proxy", true);
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
@@ -92,20 +95,21 @@ export async function setupAuth(app: Express) {
       verified(null, user);
     };
 
-    // Create a strategy for the Replit domain
+    // Create a simplified strategy
     const strategyName = "replitauth";
-    const domain = process.env.REPLIT_DOMAINS!.split(",")[0];
-    const callbackURL = `https://${domain}/api/callback`;
     
-    console.log("Creating strategy for domain:", domain);
-    console.log("Using callback URL:", callbackURL);
+    // Always use a relative URL for callback to avoid hostname issues
+    const callbackURL = '/api/callback';
+    
+    console.log("Creating simplified auth strategy");
+    console.log("Using relative callback URL:", callbackURL);
     
     const strategy = new Strategy(
       {
         name: strategyName,
         config,
         scope: "openid email profile offline_access",
-        callbackURL: callbackURL,
+        callbackURL,
       },
       verify,
     );
@@ -120,40 +124,80 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    console.log("Login attempt with hostname:", req.hostname);
+    console.log("Login attempt with hostname:", req.hostname, "protocol:", req.protocol);
     try {
+      // Use detailed logging to trace the authentication flow
       passport.authenticate("replitauth", {
         prompt: "login consent",
         scope: ["openid", "email", "profile", "offline_access"],
+        successReturnToOrRedirect: "/",
+        failureRedirect: "/login-failed",
       })(req, res, next);
     } catch (error) {
       console.error("Error during login authentication:", error);
-      res.status(500).json({ message: "Authentication error", error: String(error) });
+      // Instead of JSON error, redirect to an error page for better UX
+      res.redirect(`/?auth_error=${encodeURIComponent("Login failed")}`);
     }
   });
 
   app.get("/api/callback", (req, res, next) => {
-    console.log("Callback received with hostname:", req.hostname);
+    console.log("Callback received with hostname:", req.hostname, "protocol:", req.protocol);
+    console.log("Query params:", req.query);
+    
+    // Debug callback request details
+    if (req.query.error) {
+      console.error("Auth error from provider:", req.query.error, req.query.error_description);
+    }
+
     try {
       passport.authenticate("replitauth", {
         successReturnToOrRedirect: "/",
-        failureRedirect: "/api/login",
+        failureRedirect: "/login-failed",
       })(req, res, next);
     } catch (error) {
       console.error("Error during callback:", error);
-      res.status(500).json({ message: "Callback error", error: String(error) });
+      res.redirect(`/?auth_error=${encodeURIComponent("Authentication failed")}`);
     }
   });
+  
+  // Simple error page for login failures
+  app.get("/login-failed", (req, res) => {
+    console.log("Login failed route accessed");
+    res.send(`
+      <html>
+        <head><title>Login Failed</title></head>
+        <body>
+          <h1>Authentication Failed</h1>
+          <p>Sorry, there was a problem with authentication. Please try again.</p>
+          <a href="/api/login">Try Again</a>
+        </body>
+      </html>
+    `);
+  });
 
-  app.get("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
-    });
+  app.get("/api/logout", async (req, res) => {
+    try {
+      console.log("Logout requested by user");
+      const config = await getOidcConfig();
+      req.logout(() => {
+        try {
+          const logoutUrl = client.buildEndSessionUrl(config, {
+            client_id: process.env.REPL_ID!,
+            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+          }).href;
+          
+          console.log("Redirecting to logout URL:", logoutUrl);
+          res.redirect(logoutUrl);
+        } catch (error) {
+          console.error("Error building end session URL:", error);
+          // Fallback to simple redirect
+          res.redirect('/');
+        }
+      });
+    } catch (error) {
+      console.error("Error in logout route:", error);
+      res.redirect('/');
+    }
   });
 }
 
