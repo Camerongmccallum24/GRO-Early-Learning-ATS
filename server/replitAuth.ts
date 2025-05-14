@@ -38,7 +38,8 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       maxAge: sessionTtl,
     },
   });
@@ -91,20 +92,26 @@ export async function setupAuth(app: Express) {
       verified(null, user);
     };
 
-    for (const domain of process.env
-      .REPLIT_DOMAINS!.split(",")) {
-      const strategy = new Strategy(
-        {
-          name: `replitauth:${domain}`,
-          config,
-          scope: "openid email profile offline_access",
-          callbackURL: `https://${domain}/api/callback`,
-        },
-        verify,
-      );
-      passport.use(strategy);
-      console.log(`Auth strategy created for domain: ${domain}`);
-    }
+    // Create a strategy for the Replit domain
+    const strategyName = "replitauth";
+    const domain = process.env.REPLIT_DOMAINS!.split(",")[0];
+    const callbackURL = `https://${domain}/api/callback`;
+    
+    console.log("Creating strategy for domain:", domain);
+    console.log("Using callback URL:", callbackURL);
+    
+    const strategy = new Strategy(
+      {
+        name: strategyName,
+        config,
+        scope: "openid email profile offline_access",
+        callbackURL: callbackURL,
+      },
+      verify,
+    );
+    
+    passport.use(strategy);
+    console.log(`Auth strategy created with name: ${strategyName}`);
   } catch (error) {
     console.error("Error setting up auth:", error);
   }
@@ -115,7 +122,7 @@ export async function setupAuth(app: Express) {
   app.get("/api/login", (req, res, next) => {
     console.log("Login attempt with hostname:", req.hostname);
     try {
-      passport.authenticate(`replitauth:${req.hostname}`, {
+      passport.authenticate("replitauth", {
         prompt: "login consent",
         scope: ["openid", "email", "profile", "offline_access"],
       })(req, res, next);
@@ -128,7 +135,7 @@ export async function setupAuth(app: Express) {
   app.get("/api/callback", (req, res, next) => {
     console.log("Callback received with hostname:", req.hostname);
     try {
-      passport.authenticate(`replitauth:${req.hostname}`, {
+      passport.authenticate("replitauth", {
         successReturnToOrRedirect: "/",
         failureRedirect: "/api/login",
       })(req, res, next);
