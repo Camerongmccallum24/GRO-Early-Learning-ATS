@@ -43,6 +43,7 @@ export default function Applications() {
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [applicationDetail, setApplicationDetail] = useState<any>(null);
   const [updateStatusDialog, setUpdateStatusDialog] = useState<{ id: number, status: string } | null>(null);
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -111,6 +112,7 @@ export default function Applications() {
 
   const handleViewDetails = (application: any) => {
     setApplicationDetail(application);
+    setShowEmailForm(false); // Reset email form state when opening the dialog
   };
 
   const handleUpdateStatus = (id: number, status: string) => {
@@ -331,7 +333,15 @@ export default function Applications() {
       </Dialog>
 
       {/* Application Detail Dialog */}
-      <Dialog open={!!applicationDetail} onOpenChange={(open) => !open && setApplicationDetail(null)}>
+      <Dialog 
+        open={!!applicationDetail} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setApplicationDetail(null);
+            setShowEmailForm(false);
+          }
+        }}
+      >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Application Details</DialogTitle>
@@ -341,6 +351,22 @@ export default function Applications() {
           </DialogHeader>
           {applicationDetail && (
             <div className="mt-4">
+              {/* Email Form */}
+              {showEmailForm && applicationDetail.candidate?.email && (
+                <EmailForm
+                  applicationId={applicationDetail.id}
+                  candidateName={applicationDetail.candidate?.name || "Candidate"}
+                  candidateEmail={applicationDetail.candidate?.email}
+                  onEmailSent={() => {
+                    setShowEmailForm(false);
+                    toast({
+                      title: "Email sent successfully",
+                      description: "The candidate has been notified",
+                    });
+                  }}
+                />
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-2 flex items-center">
@@ -356,6 +382,7 @@ export default function Applications() {
                       }}
                     >
                       <Mail className="h-4 w-4" />
+                      <span className="sr-only">Send Email</span>
                     </Button>
                   </h3>
                   <div className="bg-gray-50 p-4 rounded-md">
