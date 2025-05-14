@@ -14,10 +14,15 @@ if (!process.env.REPLIT_DOMAINS) {
 
 const getOidcConfig = memoize(
   async () => {
-    return await client.discovery(
-      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
-    );
+    // Use hardcoded OIDC endpoints for Replit to avoid any discovery issues
+    return new client.Issuer({
+      issuer: 'https://replit.com/oidc',
+      authorization_endpoint: 'https://replit.com/oidc/auth',
+      token_endpoint: 'https://replit.com/oidc/token',
+      jwks_uri: 'https://replit.com/oidc/jwks',
+      userinfo_endpoint: 'https://replit.com/oidc/userinfo',
+      end_session_endpoint: 'https://replit.com/oidc/logout',
+    });
   },
   { maxAge: 3600 * 1000 }
 );
@@ -26,7 +31,10 @@ export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
+    conObject: {
+      connectionString: process.env.DATABASE_URL,
+      ssl: false
+    },
     createTableIfMissing: true, // Create table if it doesn't exist
     ttl: sessionTtl,
     tableName: "sessions",
@@ -39,7 +47,7 @@ export function getSession() {
     name: "ats_session", // Custom cookie name
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Only secure in production
+      secure: false, // Disable secure requirement for testing
       sameSite: 'lax',
       maxAge: sessionTtl,
       path: '/',
@@ -95,29 +103,22 @@ export async function setupAuth(app: Express) {
       verified(null, user);
     };
 
-    // Create a strategy for each domain in REPLIT_DOMAINS
-    const domains = process.env.REPLIT_DOMAINS!.split(",");
+    // Create a single strategy
+    const callbackURL = `https://${process.env.REPLIT_DOMAINS!.split(",")[0]}/api/callback`;
+    console.log("Using simplified strategy with callback URL:", callbackURL);
     
-    for (const domain of domains) {
-      const strategyName = `replitauth:${domain}`;
-      const callbackURL = `https://${domain}/api/callback`;
-      
-      console.log(`Creating auth strategy for domain: ${domain}`);
-      console.log(`Using absolute callback URL: ${callbackURL}`);
-      
-      const strategy = new Strategy(
-        {
-          name: strategyName,
-          config,
-          scope: "openid email profile offline_access",
-          callbackURL,
-        },
-        verify,
-      );
-      
-      passport.use(strategy);
-      console.log(`Auth strategy created with name: ${strategyName}`);
-    }
+    const strategy = new Strategy(
+      {
+        name: "replitauth",
+        config,
+        scope: "openid email profile offline_access",
+        callbackURL,
+      },
+      verify,
+    );
+    
+    passport.use(strategy);
+    console.log("Auth strategy created with name: replitauth");
   } catch (error) {
     console.error("Error setting up auth:", error);
   }
@@ -128,11 +129,7 @@ export async function setupAuth(app: Express) {
   app.get("/api/login", (req, res, next) => {
     console.log("Login attempt with hostname:", req.hostname, "protocol:", req.protocol);
     try {
-      // Use the domain-specific strategy
-      const strategyName = `replitauth:${req.hostname}`;
-      console.log("Using strategy:", strategyName);
-      
-      passport.authenticate(strategyName, {
+      passport.authenticate("replitauth", {
         prompt: "login consent",
       })(req, res, next);
     } catch (error) {
@@ -151,10 +148,9 @@ export async function setupAuth(app: Express) {
     }
 
     try {
-      const strategyName = `replitauth:${req.hostname}`;
-      console.log("Using strategy for callback:", strategyName);
+      console.log("Using simple strategy for callback");
       
-      passport.authenticate(strategyName, {
+      passport.authenticate("replitauth", {
         successRedirect: "/", 
         failureRedirect: "/login?error=Authentication+failed",
       })(req, res, next);
@@ -179,29 +175,12 @@ export async function setupAuth(app: Express) {
     `);
   });
 
-  app.get("/api/logout", async (req, res) => {
-    try {
-      console.log("Logout requested by user");
-      const config = await getOidcConfig();
-      req.logout(() => {
-        try {
-          const logoutUrl = client.buildEndSessionUrl(config, {
-            client_id: process.env.REPL_ID!,
-            post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-          }).href;
-          
-          console.log("Redirecting to logout URL:", logoutUrl);
-          res.redirect(logoutUrl);
-        } catch (error) {
-          console.error("Error building end session URL:", error);
-          // Fallback to simple redirect
-          res.redirect('/');
-        }
-      });
-    } catch (error) {
-      console.error("Error in logout route:", error);
+  app.get("/api/logout", (req, res) => {
+    console.log("Logout requested, using simplified logout");
+    req.logout(() => {
+      // Simply redirect to home page after logout
       res.redirect('/');
-    }
+    });
   });
 }
 
