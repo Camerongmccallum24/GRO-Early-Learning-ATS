@@ -382,8 +382,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Candidate email not found" });
       }
       
-      // Import the email service
-      const { sendCustomEmail } = await import('./email-service');
+      // Import the Gmail service instead of SendGrid service
+      const { sendCustomEmail } = await import('./gmail-service');
       
       // Send the custom email
       const emailSent = await sendCustomEmail(
@@ -460,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fullApplication = await storage.getApplication(Number(id));
         
         if (fullApplication && fullApplication.candidate?.email) {
-          const { sendApplicationStatusEmail } = await import('./email-service');
+          const { sendApplicationStatusEmail } = await import('./gmail-service');
           
           // Send status update email
           await sendApplicationStatusEmail(
