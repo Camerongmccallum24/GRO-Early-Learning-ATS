@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/utils";
 import { ApplicationStatusBadge } from "@/components/application-status-badge";
-import { SearchIcon, Filter, MoreHorizontal } from "lucide-react";
+import { SearchIcon, Filter, MoreHorizontal, Mail } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { EmailForm } from "@/components/email-form";
 import {
   Dialog,
   DialogContent,
@@ -342,7 +343,21 @@ export default function Applications() {
             <div className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Candidate Information</h3>
+                  <h3 className="text-lg font-semibold mb-2 flex items-center">
+                    Candidate Information
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="ml-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Toggle email form display
+                        setShowEmailForm(!showEmailForm);
+                      }}
+                    >
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-md">
                     <div className="flex items-center mb-4">
                       <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
