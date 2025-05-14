@@ -30,27 +30,14 @@ function LoadingAuth() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const { isAuthenticated, isLoading } = useAuth();
-  const [, navigate] = useLocation();
+  const { user } = useAuth();
   const [location] = useLocation();
 
   useEffect(() => {
     setIsMobileNavOpen(false);
   }, [location]);
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  if (isLoading) {
-    return <LoadingAuth />;
-  }
-
-  if (!isAuthenticated) {
-    return null; // Will be redirected by the useEffect
-  }
+  
+  // Authentication check temporarily disabled
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -74,23 +61,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [, navigate] = useLocation();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  if (isLoading) {
-    return <LoadingAuth />;
-  }
-
-  if (!isAuthenticated) {
-    return null; // Will be redirected by the useEffect
-  }
-
+  // Authentication check temporarily disabled
   return <>{children}</>;
 }
 

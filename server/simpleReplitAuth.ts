@@ -108,14 +108,34 @@ export function setupAuth(app: Express) {
 }
 
 // Middleware to check if user is authenticated
+// TEMPORARILY DISABLED FOR DEVELOPMENT
 export const isAuthenticated: RequestHandler = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
+  // Automatically add mock user data for development
+  if (!req.user) {
+    req.user = {
+      id: "123456789",
+      email: "hr-admin@groearlylearning.com",
+      firstName: "HR",
+      lastName: "Admin",
+      profileImageUrl: "https://ui-avatars.com/api/?name=HR+Admin&background=0052CC&color=fff",
+      role: "hr_admin"
+    };
   }
-  return res.status(401).json({ message: 'Unauthorized' });
+  return next();
 };
 
 // Get current user from request
 export function getUser(req: any) {
+  // Return mock user if no user in session
+  if (!req.user) {
+    return {
+      id: "123456789",
+      email: "hr-admin@groearlylearning.com",
+      firstName: "HR",
+      lastName: "Admin",
+      profileImageUrl: "https://ui-avatars.com/api/?name=HR+Admin&background=0052CC&color=fff",
+      role: "hr_admin"
+    };
+  }
   return req.user;
 }
