@@ -3,39 +3,40 @@
 @tailwind utilities;
 
 :root {
+  /* GRO Early Learning Brand Colors */
   --background: 0 0% 100%;
-  --foreground: 217 33% 20%;
+  --foreground: 264 100% 67%; /* Updated to match #7356ff */
   --muted: 60 4.8% 95.9%;
   --muted-foreground: 219 14% 63%;
   --popover: 0 0% 100%;
-  --popover-foreground: 217 33% 20%;
+  --popover-foreground: 264 100% 67%;
   --card: 0 0% 100%;
-  --card-foreground: 217 33% 20%;
+  --card-foreground: 264 100% 67%;
   --border: 220 13% 91%;
   --input: 220 13% 91%;
-  --primary: 209 100% 40%;
-  --primary-foreground: 211 100% 99%;
-  --secondary: 157 100% 27%;
-  --secondary-foreground: 211 100% 99%;
-  --accent: 60 4.8% 95.9%;
-  --accent-foreground: 24 9.8% 10%;
+  --primary: 164 27% 76%; /* Updated to match #bcd7d0 */
+  --primary-foreground: 264 100% 67%;
+  --secondary: 25 53% 81%; /* Updated to match #e7cab7 */
+  --secondary-foreground: 264 100% 67%;
+  --accent: 65 59% 64%; /* Updated to match #cfd86f */
+  --accent-foreground: 264 100% 67%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 60 9.1% 97.8%;
-  --ring: 209 100% 40%;
+  --ring: 164 27% 76%;
   --radius: 0.5rem;
-  --chart-1: 209 100% 40%;
-  --chart-2: 157 100% 27%;
-  --chart-3: 14 100% 63%;
-  --chart-4: 201 96% 71%;
-  --chart-5: 49 100% 50%;
-  --sidebar-background: 217 33% 20%;
-  --sidebar-foreground: 0 0% 100%;
-  --sidebar-primary: 209 100% 40%;
-  --sidebar-primary-foreground: 211 100% 99%;
-  --sidebar-accent: 220 14% 96%;
-  --sidebar-accent-foreground: 217 33% 20%;
-  --sidebar-border: 217 19% 27%;
-  --sidebar-ring: 217 33% 20%;
+  --chart-1: 164 27% 76%; /* Mint */
+  --chart-2: 25 53% 81%; /* Coral */
+  --chart-3: 65 59% 64%; /* Lime */
+  --chart-4: 264 100% 67%; /* Purple */
+  --chart-5: 30 80% 80%; /* Light Orange */
+  --sidebar-background: 164 27% 76%; /* Mint sidebar */
+  --sidebar-foreground: 264 100% 67%; /* Purple text */
+  --sidebar-primary: 25 53% 81%; /* Coral for primary elements */
+  --sidebar-primary-foreground: 264 100% 67%;
+  --sidebar-accent: 65 59% 64%; /* Lime for accent elements */
+  --sidebar-accent-foreground: 264 100% 67%;
+  --sidebar-border: 164 27% 66%;
+  --sidebar-ring: 164 27% 76%;
 }
 
 .dark {
@@ -67,7 +68,7 @@
   }
 
   body {
-    @apply bg-[#F4F5F7] text-[#172B4D] font-sans;
+    @apply bg-[#F9F9F5] text-[#7356ff] font-sans;
   }
 }
 

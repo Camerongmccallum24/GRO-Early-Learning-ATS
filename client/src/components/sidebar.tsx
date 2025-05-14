@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import groLogo from "../assets/gro-logo.png";
+import groLogo from "../assets/gro-logo.svg";
 
 // Define a type for the user object
 interface AuthUser {
