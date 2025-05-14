@@ -99,10 +99,18 @@
 }
 
 /* Main layout and responsive adjustments */
-@media (min-width: 1024px) {
+/* Mobile First Approach */
+.content-with-sidebar {
+  width: 100%;
+  transition: margin-left 0.3s ease;
+  padding-top: 60px; /* Space for mobile header */
+}
+
+/* Larger screens (md and up) */
+@media (min-width: 768px) {
   .content-with-sidebar {
     margin-left: 64px; /* Default collapsed sidebar width */
-    transition: margin-left 0.3s ease;
+    padding-top: 0;
   }
   
   .content-with-sidebar-expanded {
@@ -110,18 +118,51 @@
   }
 }
 
-/* Mobile specific styles */
-@media (max-width: 1023px) {
-  .mobile-menu-button {
-    position: fixed;
-    top: 1rem;
-    left: 1rem;
-    z-index: 50;
+/* Enhanced responsive layouts */
+@media (max-width: 767px) {
+  /* Optimize card layouts for small screens */
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
   }
   
-  /* Add padding for mobile menu button */
-  .has-mobile-menu {
-    padding-top: 4rem;
+  /* Optimize header spacing */
+  .page-header {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  
+  /* Full width containers on mobile */
+  .container-responsive {
+    width: 100%;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  /* Stack elements vertically on mobile */
+  .stack-on-mobile {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Adjust spacing between stacked elements */
+  .stack-on-mobile > * + * {
+    margin-top: 0.75rem;
+    margin-left: 0 !important;
+  }
+  
+  /* Hide elements on mobile */
+  .hide-on-mobile {
+    display: none;
+  }
+}
+
+/* Medium screens (tablets) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .container-responsive {
+    max-width: 100%;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 

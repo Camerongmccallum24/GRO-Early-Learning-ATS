@@ -163,6 +163,15 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
 
   return (
     <>
+      {/* Mobile background overlay when menu is open */}
+      {(isSmallScreen && isMobileMenuOpen) && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity duration-200"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      
       {/* Mobile toggle button - only visible on small screens */}
       <div className={cn(
         "fixed top-4 left-4 z-50", 
@@ -249,13 +258,18 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
               <span className="sidebar-tooltip">{isPinned ? "Unpin" : "Pin"}</span>
             </button>
             
-            {/* Close button - mobile only */}
-            {isMobileMenuOpen && (
+            {/* Close button - improved for mobile accessibility */}
+            {isSmallScreen && (
               <button 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="lg:hidden flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100"
+                aria-label="Close menu"
+                className="absolute right-3 top-3 flex items-center justify-center h-10 w-10 rounded-full 
+                           text-[#2c2c2c] hover:bg-gray-100 focus:ring-2 focus:ring-[#7356ff] focus:outline-none"
               >
-                <ChevronLeftIcon className="h-5 w-5" />
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
             )}
           </div>
