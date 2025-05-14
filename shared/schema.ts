@@ -236,11 +236,11 @@ export const interviews = pgTable("interviews", {
   applicationId: integer("application_id").notNull().references(() => applications.id),
   scheduledDate: timestamp("scheduled_date").notNull(),
   duration: integer("duration").default(60).notNull(), // in minutes
-  interviewType: interviewTypeEnum("interview_type").default("in_person").notNull(),
+  interviewType: text("interview_type").default("in_person").notNull(), // Changed to text type for now
   location: text("location"), // Physical location or video conference link
   interviewerId: varchar("interviewer_id").references(() => users.id),
   notes: text("notes"),
-  status: interviewStatusEnum("status").default("scheduled").notNull(),
+  status: text("status").default("scheduled").notNull(), // Changed to text type for now
   feedback: text("feedback"),
   videoLink: text("video_link"), // For video interviews: link to join
   recordingPermission: boolean("recording_permission").default(false), // Consent to record

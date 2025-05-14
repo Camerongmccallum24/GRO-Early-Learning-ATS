@@ -5,6 +5,7 @@ import {
   applications, type Application, type InsertApplication,
   locations, type Location, type InsertLocation,
   interviews, type Interview, type InsertInterview,
+  communicationLogs, type CommunicationLog, type InsertCommunicationLog,
   auditLogs, type AuditLog, type InsertAuditLog
 } from "@shared/schema";
 import { db } from "./db";
@@ -411,6 +412,126 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(locations, eq(jobPostings.locationId, locations.id))
       .orderBy(desc(applications.applicationDate))
       .limit(limit);
+  }
+
+  // Communication log methods
+  async getCommunicationLogs(candidateId: number): Promise<(CommunicationLog & { candidate?: Candidate })[]> {
+    const logs = await db
+      .select({
+        ...communicationLogs,
+        candidate: candidates
+      })
+      .from(communicationLogs)
+      .where(eq(communicationLogs.candidateId, candidateId))
+      .leftJoin(candidates, eq(communicationLogs.candidateId, candidates.id))
+      .orderBy(desc(communicationLogs.timestamp));
+    return logs;
+  }
+
+  async getApplicationCommunicationLogs(applicationId: number): Promise<(CommunicationLog & { candidate?: Candidate })[]> {
+    const logs = await db
+      .select({
+        ...communicationLogs,
+        candidate: candidates
+      })
+      .from(communicationLogs)
+      .where(eq(communicationLogs.applicationId, applicationId))
+      .leftJoin(candidates, eq(communicationLogs.candidateId, candidates.id))
+      .orderBy(desc(communicationLogs.timestamp));
+    return logs;
+  }
+
+  async createCommunicationLog(log: InsertCommunicationLog): Promise<CommunicationLog> {
+    const [communicationLog] = await db
+      .insert(communicationLogs)
+      .values(log)
+      .returning();
+    return communicationLog;
+  }
+
+  // Video interview methods
+  async scheduleVideoInterview(applicationId: number, interview: InsertInterview): Promise<Interview> {
+    // Ensure the interview is of video type
+    const interviewData = {
+      ...interview,
+      applicationId,
+      interviewType: 'video', 
+      status: 'scheduled'
+    };
+    
+    const [scheduledInterview] = await db
+      .insert(interviews)
+      .values(interviewData)
+      .returning();
+    
+    // Get the application and candidate info for communication log
+    const application = await this.getApplication(applicationId);
+    
+    if (application && application.candidate) {
+      // Create a communication log for the scheduled interview
+      await this.createCommunicationLog({
+        candidateId: application.candidateId,
+        applicationId,
+        type: 'video_interview',
+        subject: 'Video Interview Scheduled',
+        message: `Video interview scheduled for ${new Date(interview.scheduledDate).toLocaleDateString()} at ${new Date(interview.scheduledDate).toLocaleTimeString()}`,
+        direction: 'outbound',
+        initiatedBy: interview.interviewerId,
+        metadata: {
+          interviewId: scheduledInterview.id,
+          videoLink: interview.videoLink
+        }
+      });
+    }
+    
+    return scheduledInterview;
+  }
+
+  async sendInterviewReminder(interviewId: number): Promise<boolean> {
+    try {
+      // Get the interview details
+      const interviewData = await db
+        .select({
+          interview: interviews,
+          application: applications,
+          candidate: candidates
+        })
+        .from(interviews)
+        .where(eq(interviews.id, interviewId))
+        .leftJoin(applications, eq(interviews.applicationId, applications.id))
+        .leftJoin(candidates, eq(applications.candidateId, candidates.id))
+        .limit(1);
+      
+      if (!interviewData.length || !interviewData[0].candidate) {
+        return false;
+      }
+      
+      // Update the reminder status
+      await db
+        .update(interviews)
+        .set({ reminderSent: true })
+        .where(eq(interviews.id, interviewId));
+      
+      // Create a communication log for the reminder
+      await this.createCommunicationLog({
+        candidateId: interviewData[0].candidate.id,
+        applicationId: interviewData[0].interview.applicationId,
+        type: 'reminder',
+        subject: 'Interview Reminder',
+        message: `Reminder for your interview scheduled on ${new Date(interviewData[0].interview.scheduledDate).toLocaleDateString()} at ${new Date(interviewData[0].interview.scheduledDate).toLocaleTimeString()}`,
+        direction: 'outbound',
+        metadata: {
+          interviewId,
+          reminderType: 'automated',
+          videoLink: interviewData[0].interview.videoLink
+        }
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error sending interview reminder:', error);
+      return false;
+    }
   }
 }
 
