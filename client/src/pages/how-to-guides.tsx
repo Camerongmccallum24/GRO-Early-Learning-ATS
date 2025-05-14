@@ -31,6 +31,7 @@ export default function HowToGuides() {
     { id: "candidates", label: "Candidates" },
     { id: "interviews", label: "Interviews" },
     { id: "ai-features", label: "AI Features" },
+    { id: "admin", label: "Administrator" },
   ];
   
   const guides = [
@@ -578,7 +579,10 @@ export default function HowToGuides() {
           
           {guideCategories.map(category => (
             <TabsContent key={category.id} value={category.id} className="space-y-6">
-              {filterGuides(guides, category.id, searchTerm).length > 0 ? (
+              {category.id === "admin" ? (
+                // Special case for admin guides which use a different component
+                <AdminGuides />
+              ) : filterGuides(guides, category.id, searchTerm).length > 0 ? (
                 filterGuides(guides, category.id, searchTerm).map(guide => (
                   <Card key={guide.id} className="overflow-hidden">
                     <CardHeader className="bg-muted/50 flex flex-row items-center gap-4">
