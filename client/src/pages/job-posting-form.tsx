@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import JobTemplates from "@/components/job-templates";
 
 // Define the schema for job posting form
 const jobPostingSchema = z.object({
@@ -67,6 +68,7 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditMode = !!id;
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // Fetch locations for dropdown
   const { data: locations = [] } = useQuery({
@@ -184,6 +186,21 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
       createJobMutation.mutate(currentValues);
     }
   };
+  
+  // Handle template selection
+  const handleSelectTemplate = (template: any) => {
+    form.setValue("title", template.title);
+    form.setValue("qualifications", template.qualifications);
+    form.setValue("employmentType", template.employmentType);
+    form.setValue("description", template.description);
+    form.setValue("requirements", template.requirements);
+    form.setValue("benefits", template.benefits);
+    
+    toast({
+      title: "Template applied",
+      description: `${template.title} template has been applied. You can now customize the details.`,
+    });
+  };
 
   if (isEditMode && isJobLoading) {
     return (
@@ -202,7 +219,8 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
             {isEditMode ? "Edit Job Posting" : "Create New Job Posting"}
           </h1>
         </div>
-        <div className="flex md:mt-0 md:ml-4">
+        <div className="flex md:mt-0 md:ml-4 gap-2">
+          {!isEditMode && <JobTemplates onSelectTemplate={handleSelectTemplate} />}
           <Button variant="outline" onClick={() => navigate("/jobs")}>
             Cancel
           </Button>
@@ -214,9 +232,12 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
         <h2 className="text-xl font-semibold text-[#172B4D]">
           {isEditMode ? "Edit Job Posting" : "Create New Job Posting"}
         </h2>
-        <Button variant="outline" size="sm" onClick={() => navigate("/jobs")}>
-          Cancel
-        </Button>
+        <div className="flex gap-2">
+          {!isEditMode && <JobTemplates onSelectTemplate={handleSelectTemplate} />}
+          <Button variant="outline" size="sm" onClick={() => navigate("/jobs")}>
+            Cancel
+          </Button>
+        </div>
       </div>
 
       <Card className="shadow overflow-hidden">
