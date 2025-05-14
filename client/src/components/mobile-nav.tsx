@@ -11,7 +11,7 @@ import {
   User as UserIcon,
   LogOut
 } from "lucide-react";
-import { useAuth } from "./auth-provider";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,23 +22,11 @@ interface MobileNavProps {
 
 export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
   const [location] = useLocation();
-  const { logout, user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast({
-        title: "Logged out successfully",
-        variant: "default",
-      });
-    } catch (error) {
-      toast({
-        title: "Error logging out",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    }
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
   };
 
   const navItems = [
@@ -88,7 +76,7 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
           </div>
         </div>
         <div className="flex h-8 w-8 rounded-full items-center justify-center bg-gray-300 text-gray-800">
-          {user?.name?.charAt(0) || '?'}
+          {user?.firstName?.charAt(0) || user?.email?.charAt(0) || '?'}
         </div>
       </div>
       
@@ -125,11 +113,13 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
           <div className="pt-4 mt-4 border-t border-sidebar-border">
             <div className="flex items-center px-2 py-2">
               <div className="flex h-10 w-10 rounded-full items-center justify-center bg-gray-300 text-gray-800">
-                {user?.name?.charAt(0) || '?'}
+                {user?.firstName?.charAt(0) || user?.email?.charAt(0) || '?'}
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
-                <p className="text-xs font-medium text-gray-300">{user?.role === 'hr_admin' ? 'HR Manager' : user?.role}</p>
+                <p className="text-sm font-medium text-white">
+                  {user?.firstName ? `${user?.firstName} ${user?.lastName || ''}` : user?.email || 'User'}
+                </p>
+                <p className="text-xs font-medium text-gray-300">{user?.role === 'hr_admin' ? 'HR Manager' : user?.role || 'User'}</p>
               </div>
             </div>
             <button 
