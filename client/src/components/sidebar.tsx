@@ -144,7 +144,7 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
           variant="outline"
           size="icon"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 h-12 w-12"
+          className="rounded-full bg-[#e89174] text-white shadow-lg hover:bg-[#d8755b] h-12 w-12"
         >
           <MenuIcon className="h-6 w-6" />
         </Button>
@@ -153,7 +153,7 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
       {/* Sidebar for desktop and mobile */}
       <div 
         className={cn(
-          "fixed inset-y-0 z-50 flex flex-col border-r border-gray-200 bg-white transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 z-50 flex flex-col border-r border-gray-200 bg-[#f9f9f9] transition-all duration-300 ease-in-out",
           isCollapsed ? "lg:w-20" : "lg:w-64",
           // On mobile: show if open, hide if closed
           // On desktop: always show, but respect collapsed state
@@ -229,15 +229,15 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
                     <div
                       className={cn(
                         item.active
-                          ? "bg-primary text-white"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                          ? "bg-[#e89174] text-white"
+                          : "text-[#2c2c2c] hover:bg-gray-100 hover:text-[#7356ff]",
                         "group flex items-center gap-x-3 rounded-md p-3 text-sm font-semibold cursor-pointer",
                         isCollapsed && "justify-center"
                       )}
                     >
                       <item.icon
                         className={cn(
-                          item.active ? "text-white" : "text-gray-500 group-hover:text-gray-900",
+                          item.active ? "text-white" : "text-[#2c2c2c] group-hover:text-[#7356ff]",
                           "h-5 w-5 shrink-0"
                         )}
                         aria-hidden="true"
@@ -283,7 +283,7 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+                    <div className="w-10 h-10 rounded-full bg-[#e89174] flex items-center justify-center text-white">
                       {authUser.firstName?.charAt(0) || authUser.email?.charAt(0) || '?'}
                     </div>
                   )}
@@ -293,12 +293,12 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
               <button
                 onClick={logout}
                 className={cn(
-                  "group flex items-center gap-x-3 rounded-md p-3 text-sm font-semibold text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                  "group flex items-center gap-x-3 rounded-md p-3 text-sm font-semibold text-[#2c2c2c] hover:bg-gray-100 hover:text-[#7356ff]",
                   isCollapsed ? "justify-center w-full" : "w-full"
                 )}
               >
                 <LogOutIcon
-                  className="h-5 w-5 shrink-0 text-gray-500 group-hover:text-gray-900"
+                  className="h-5 w-5 shrink-0 text-[#2c2c2c] group-hover:text-[#7356ff]"
                   aria-hidden="true"
                 />
                 {!isCollapsed && <span>Log Out</span>}
