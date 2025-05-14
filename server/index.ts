@@ -2,6 +2,13 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Set up development environment variables
+if (process.env.NODE_ENV === "development") {
+  // For development mode, set mock emails to true
+  process.env.MOCK_EMAILS = "true";
+  console.log("Development mode: Email sending is mocked");
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

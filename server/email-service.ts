@@ -142,6 +142,12 @@ export async function sendApplicationStatusEmail(
   previousStatus: string
 ): Promise<boolean> {
   try {
+    // Check if SendGrid API key is set
+    if (!process.env.SENDGRID_API_KEY) {
+      console.error('SendGrid API key not set. Cannot send status update email.');
+      return false;
+    }
+
     // Check if we have required information
     if (!application.candidate?.email || !application.jobPosting?.title) {
       console.error('Missing candidate email or job title for email notification');
@@ -169,19 +175,42 @@ export async function sendApplicationStatusEmail(
     // Prepare email content
     const msg = {
       to: application.candidate.email,
-      from: DEFAULT_FROM_EMAIL,
+      from: DEFAULT_FROM_EMAIL, // Ensure this is verified in SendGrid
       subject: template.subject,
       text: template.text(candidateName, position),
       html: template.html(candidateName, position),
     };
 
-    // Send email
-    await mailService.send(msg);
-    
-    console.log(`Status update email sent to ${application.candidate.email} for status: ${application.status}`);
-    return true;
+    // For development, log email instead of sending if needed
+    if (process.env.NODE_ENV === 'development' && process.env.MOCK_EMAILS === 'true') {
+      console.log('MOCK STATUS EMAIL SENT:', {
+        to: msg.to,
+        from: msg.from,
+        subject: msg.subject,
+        status: application.status
+      });
+      return true;
+    }
+
+    // Actual email sending
+    try {
+      await mailService.send(msg);
+      console.log(`Status update email sent to ${application.candidate.email} for status: ${application.status}`);
+      return true;
+    } catch (sendError: any) {
+      // Log detailed SendGrid error information
+      if (sendError.response) {
+        console.error('SendGrid API Error:', {
+          status: sendError.code,
+          errors: sendError.response.body.errors
+        });
+      } else {
+        console.error('Unknown SendGrid error:', sendError);
+      }
+      return false;
+    }
   } catch (error) {
-    console.error('Error sending status update email:', error);
+    console.error('Error in sendApplicationStatusEmail function:', error);
     return false;
   }
 }
