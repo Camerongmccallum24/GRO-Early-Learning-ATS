@@ -12,10 +12,10 @@ import Applications from "@/pages/applications";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import { Sidebar } from "@/components/sidebar";
-import { MobileNav } from "@/components/mobile-nav";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 
 // Loading component to show during authentication
 function LoadingAuth() {
@@ -30,30 +30,39 @@ function LoadingAuth() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const { user } = useAuth();
   const [location] = useLocation();
 
   useEffect(() => {
-    setIsMobileNavOpen(false);
-  }, [location]);
+    // You could save sidebar state to localStorage here to persist it
+    const savedState = localStorage.getItem('sidebar-expanded');
+    if (savedState) {
+      setIsSidebarExpanded(savedState === 'true');
+    }
+  }, []);
+  
+  // Save sidebar state when it changes
+  useEffect(() => {
+    localStorage.setItem('sidebar-expanded', isSidebarExpanded.toString());
+  }, [isSidebarExpanded]);
   
   // Authentication check temporarily disabled
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar for desktop */}
-      <Sidebar />
+      {/* Collapsible Sidebar (works for both desktop and mobile) */}
+      <Sidebar isMobile={true} />
       
-      {/* Mobile navigation */}
-      <MobileNav 
-        isOpen={isMobileNavOpen} 
-        onToggle={() => setIsMobileNavOpen(!isMobileNavOpen)} 
-      />
-      
-      {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <main className="flex-1 overflow-y-auto bg-[#F4F5F7] pt-16 md:pt-0">
+      {/* Main content with responsive margin to accommodate sidebar */}
+      <div 
+        className={cn(
+          "flex flex-col flex-1 overflow-hidden transition-all duration-300",
+          "content-with-sidebar",
+          isSidebarExpanded && "content-with-sidebar-expanded"
+        )}
+      >
+        <main className="flex-1 overflow-y-auto bg-[#F4F5F7] pt-16 px-4 md:pt-6 md:px-6">
           {children}
         </main>
       </div>

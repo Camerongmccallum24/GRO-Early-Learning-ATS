@@ -5,10 +5,14 @@ import {
   ClipboardListIcon,
   LogOutIcon,
   UserIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MenuIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { User } from "@shared/schema";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 // Define a type for the user object
 interface AuthUser {
@@ -20,10 +24,38 @@ interface AuthUser {
   role?: string;
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobile?: boolean;
+  onCollapseChange?: (collapsed: boolean) => void;
+}
+
+export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    // Check localStorage for saved state
+    const savedState = localStorage.getItem('sidebar-collapsed');
+    return savedState ? savedState === 'true' : false;
+  });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // Reset mobile menu state when location changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location]);
+  
+  // Save collapsed state to localStorage and notify parent
+  const toggleCollapsed = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem('sidebar-collapsed', String(newState));
+    
+    // Notify parent component if callback provided
+    if (onCollapseChange) {
+      onCollapseChange(newState);
+    }
+  };
+
   // Cast user to the AuthUser type
   const authUser = user as AuthUser | undefined;
 
@@ -75,73 +107,154 @@ export function Sidebar() {
   ];
 
   return (
-    <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
-      <div className="flex h-screen flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-[#FFFFFF] px-5">
-        <div className="flex h-16 shrink-0 items-center justify-start space-x-2">
-            <img src="/uploads/OIP.jpeg" alt="GRO Logo" className="h-10 w-10 rounded-lg object-cover" />
-            <h1 className="text-xl font-semibold text-gray-900">GRO ATS</h1>
+    <>
+      {/* Mobile toggle button - only visible on mobile */}
+      <div className="fixed top-4 left-4 z-40 lg:hidden">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="rounded-full bg-white shadow-md"
+        >
+          <MenuIcon className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Sidebar for desktop and mobile */}
+      <div 
+        className={cn(
+          "fixed inset-y-0 z-50 flex flex-col border-r border-gray-200 bg-white transition-all duration-300 ease-in-out",
+          isCollapsed ? "lg:w-20" : "lg:w-64",
+          // On mobile: show if open, hide if closed
+          // On desktop: always show, but respect collapsed state
+          isMobileMenuOpen ? "left-0 shadow-xl" : "lg:left-0 -left-full"
+        )}
+      >
+        <div className="flex h-screen flex-grow flex-col overflow-y-auto">
+          {/* Header with logo and collapse toggle */}
+          <div className={cn(
+            "flex h-16 shrink-0 items-center border-b border-gray-200 px-4",
+            isCollapsed ? "justify-center" : "justify-between"
+          )}>
+            <div className={cn("flex items-center", isCollapsed ? "justify-center" : "justify-start space-x-2")}>
+              <img src="/uploads/OIP.jpeg" alt="GRO Logo" className="h-10 w-10 rounded-lg object-cover shrink-0" />
+              {!isCollapsed && <h1 className="text-xl font-semibold text-gray-900">GRO ATS</h1>}
+            </div>
+            
+            {/* Toggle collapse button - desktop only */}
+            <button 
+              onClick={toggleCollapsed}
+              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100"
+            >
+              {isCollapsed ? <ChevronRightIcon className="h-5 w-5" /> : <ChevronLeftIcon className="h-5 w-5" />}
+            </button>
+            
+            {/* Close button - mobile only */}
+            {isMobileMenuOpen && (
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="lg:hidden flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100"
+              >
+                <ChevronLeftIcon className="h-5 w-5" />
+              </button>
+            )}
           </div>
-        <nav className="mt-5 flex flex-1 flex-col">
-          <ul className="flex flex-1 flex-col gap-y-1">
-            {navigation.map((item) => (
-              <li key={item.name}>
-                <Link href={item.href}>
-                  <div
-                    className={cn(
-                      item.active
-                        ? "bg-primary text-white"
-                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
-                      "group flex gap-x-3 rounded-md p-3 text-sm font-semibold cursor-pointer"
-                    )}
-                  >
-                    <item.icon
+
+          {/* Navigation items */}
+          <nav className="mt-5 flex flex-1 flex-col px-3">
+            <ul className="flex flex-1 flex-col gap-y-1">
+              {navigation.map((item) => (
+                <li key={item.name}>
+                  <Link href={item.href}>
+                    <div
                       className={cn(
-                        item.active ? "text-white" : "text-gray-500 group-hover:text-gray-900",
-                        "h-5 w-5 shrink-0"
+                        item.active
+                          ? "bg-primary text-white"
+                          : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                        "group flex items-center gap-x-3 rounded-md p-3 text-sm font-semibold cursor-pointer",
+                        isCollapsed && "justify-center"
                       )}
-                      aria-hidden="true"
-                    />
-                    <span className="sidebar-nav-label">{item.name}</span>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-auto pb-5">
-            <div className="mb-3">
-              {authUser && (
-                <div className="flex items-center gap-2 p-3">
-                  {authUser.profileImageUrl && (
-                    <img 
-                      src={authUser.profileImageUrl} 
-                      alt="Profile" 
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  )}
-                  <div className="text-sm">
-                    <div className="font-medium text-gray-900">
-                      {authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}` : authUser.email || 'GRO Staff'}
+                    >
+                      <item.icon
+                        className={cn(
+                          item.active ? "text-white" : "text-gray-500 group-hover:text-gray-900",
+                          "h-5 w-5 shrink-0"
+                        )}
+                        aria-hidden="true"
+                      />
+                      {!isCollapsed && <span>{item.name}</span>}
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {authUser.email || ''}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {/* User profile and logout */}
+            <div className="mt-auto pb-5 border-t border-gray-200 pt-3">
+              {authUser && !isCollapsed && (
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 p-3">
+                    {authUser.profileImageUrl && (
+                      <img 
+                        src={authUser.profileImageUrl} 
+                        alt="Profile" 
+                        className="w-8 h-8 rounded-full object-cover shrink-0"
+                      />
+                    )}
+                    <div className="text-sm overflow-hidden">
+                      <div className="font-medium text-gray-900 truncate">
+                        {authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}` : authUser.email || 'GRO Staff'}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {authUser.email || ''}
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
+              
+              {/* Profile image only when collapsed */}
+              {authUser && isCollapsed && (
+                <div className="flex justify-center mb-3">
+                  {authUser.profileImageUrl ? (
+                    <img 
+                      src={authUser.profileImageUrl} 
+                      alt="Profile" 
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+                      {authUser.firstName?.charAt(0) || authUser.email?.charAt(0) || '?'}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <button
+                onClick={logout}
+                className={cn(
+                  "group flex items-center gap-x-3 rounded-md p-3 text-sm font-semibold text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                  isCollapsed ? "justify-center w-full" : "w-full"
+                )}
+              >
+                <LogOutIcon
+                  className="h-5 w-5 shrink-0 text-gray-500 group-hover:text-gray-900"
+                  aria-hidden="true"
+                />
+                {!isCollapsed && <span>Log Out</span>}
+              </button>
             </div>
-            <button
-              onClick={logout}
-              className="group flex w-full items-center gap-x-3 rounded-md p-3 text-sm font-semibold text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <LogOutIcon
-                className="h-5 w-5 shrink-0 text-gray-500 group-hover:text-gray-900"
-                aria-hidden="true"
-              />
-              Log Out
-            </button>
-          </div>
-        </nav>
+          </nav>
+        </div>
       </div>
-    </div>
+
+      {/* Overlay for mobile - only visible when mobile sidebar is open */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+    </>
   );
 }
