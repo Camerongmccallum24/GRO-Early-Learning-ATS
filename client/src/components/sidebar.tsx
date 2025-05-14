@@ -34,23 +34,48 @@ interface SidebarProps {
 export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
+  
+  // Detect screen size for responsive behavior
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  
+  // Track pinned state for desktop behavior
   const [isPinned, setIsPinned] = useState(() => {
     // Check localStorage for saved pinned state
     return localStorage.getItem('sidebar-pinned') === 'true';
   });
   
+  // Manage collapsed state
   const [isCollapsed, setIsCollapsed] = useState(() => {
     // Check localStorage for saved state
     const savedState = localStorage.getItem('sidebar-collapsed');
     return savedState ? savedState === 'true' : false;
   });
   
+  // Mobile menu toggle state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Track screen size changes
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 768);
+    };
+    
+    // Set initial state
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Reset mobile menu state when location changes
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location]);
+    if (isSmallScreen) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [location, isSmallScreen]);
   
   // Save collapsed state to localStorage and notify parent
   const toggleCollapsed = () => {
@@ -138,26 +163,41 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile toggle button - only visible on mobile */}
-      <div className="fixed top-4 left-4 z-40 lg:hidden">
+      {/* Mobile toggle button - only visible on small screens */}
+      <div className={cn(
+        "fixed top-4 left-4 z-50", 
+        "md:hidden", // Hide on medium screens and up
+        "transition-opacity duration-200",
+        isMobileMenuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+      )}>
         <Button
           variant="outline"
           size="icon"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-full bg-[#e89174] text-white shadow-lg hover:bg-[#d8755b] h-12 w-12"
+          onClick={() => setIsMobileMenuOpen(true)}
+          aria-label="Open menu"
+          className="rounded-full bg-[#e89174] text-white shadow-lg hover:bg-[#d8755b] h-12 w-12 
+                    flex items-center justify-center focus:ring-2 focus:ring-[#7356ff] focus:ring-offset-2"
         >
           <MenuIcon className="h-6 w-6" />
         </Button>
       </div>
 
-      {/* Sidebar for desktop and mobile */}
+      {/* Responsive sidebar for all screen sizes */}
       <div 
         className={cn(
-          "fixed inset-y-0 z-50 flex flex-col border-r border-gray-200 bg-[#f9f9f9] transition-all duration-300 ease-in-out",
-          isCollapsed ? "lg:w-20" : "lg:w-64",
-          // On mobile: show if open, hide if closed
-          // On desktop: always show, but respect collapsed state
-          isMobileMenuOpen ? "left-0 shadow-xl" : "lg:left-0 -left-full"
+          "fixed inset-y-0 z-50 flex flex-col border-r border-gray-200 bg-[#f9f9f9]",
+          "transition-all duration-300 ease-in-out",
+          "max-h-screen overflow-hidden", // Prevent overflow issues
+          
+          // Desktop sizing
+          isCollapsed ? "md:w-20" : "md:w-64",
+          
+          // Mobile sizing and positioning
+          isSmallScreen ? "w-[280px] shadow-xl" : "",
+          
+          // Visibility control
+          (isSmallScreen && !isMobileMenuOpen) ? "-translate-x-full" : "translate-x-0",
+          !isSmallScreen && !isMobileMenuOpen ? "hidden md:flex" : "flex"
         )}
       >
         <div className="flex h-screen flex-grow flex-col overflow-y-auto">

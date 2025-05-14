@@ -67,8 +67,12 @@ function Layout({ children }: { children: React.ReactNode }) {
           isSidebarExpanded && "content-with-sidebar-expanded"
         )}
       >
-        <main className="flex-1 overflow-y-auto bg-[#F4F5F7] pt-16 px-4 md:pt-6 md:px-6">
-          {children}
+        {/* Responsive main content area with better mobile adjustments */}
+        <main className="flex-1 overflow-y-auto bg-[#F4F5F7] w-full max-w-full">
+          {/* Mobile optimized content container with proper spacing */}
+          <div className="px-3 pt-16 pb-6 sm:px-4 md:pt-6 md:px-6 lg:px-8 mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>
