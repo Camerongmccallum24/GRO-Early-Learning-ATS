@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CandidateMatchProfile } from "@/components/candidate-match-profile";
 
 export default function Candidates() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -224,6 +225,7 @@ export default function Candidates() {
                     </TabsContent>
                   </Tabs>
                   
+                  {/* Candidate Applications Section */}
                   <div className="mt-6">
                     <h4 className="font-medium mb-2">Applications</h4>
                     <div className="bg-gray-50 p-4 rounded-md">
@@ -232,6 +234,16 @@ export default function Candidates() {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* AI-Powered Match Analysis */}
+                  {selectedCandidate && selectedCandidate.id && (
+                    <div className="mt-6">
+                      <CandidateMatchProfile 
+                        candidateId={selectedCandidate.id} 
+                        candidateName={selectedCandidate.name || "Candidate"}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
