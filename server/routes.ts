@@ -677,6 +677,179 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Route for matching a candidate to a specific job posting with AI
+  app.get("/api/candidates/:candidateId/match/:jobPostingId", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { candidateId, jobPostingId } = req.params;
+      
+      // Get candidate details
+      const candidate = await storage.getCandidate(Number(candidateId));
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+      
+      // Get job posting details
+      const jobPosting = await storage.getJobPosting(Number(jobPostingId));
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ message: "OpenAI API key not configured. Unable to perform candidate matching." });
+      }
+
+      // Get location info for job posting
+      let locationName;
+      if (jobPosting.locationId) {
+        const location = await storage.getLocation(jobPosting.locationId);
+        locationName = location?.name;
+      }
+      
+      // Prepare candidate resume/profile data
+      const candidateResume = `
+Name: ${candidate.name}
+Email: ${candidate.email}
+Phone: ${candidate.phone || "Not provided"}
+Location: ${candidate.location || "Not specified"}
+Skills: ${candidate.skills || "Not specified"}
+Experience: ${candidate.experience || "Not specified"}
+Education: ${candidate.education || "Not specified"}
+Certifications: ${candidate.certifications || "Not specified"}
+Resume Summary: ${candidate.summary || "Not provided"}
+`;
+      
+      // Prepare job requirements
+      const jobRequirements = `
+Job Title: ${jobPosting.title}
+Location: ${locationName || "Not specified"}
+Description: ${jobPosting.description}
+Requirements: ${jobPosting.requirements}
+Qualifications: ${jobPosting.qualifications || "Not specified"}
+Employment Type: ${jobPosting.employmentType}
+`;
+      
+      // Import OpenAI service
+      const { matchCandidateToJob } = await import('./openai-service');
+      
+      // Get the match analysis
+      console.log(`Analyzing match between candidate ${candidateId} and job posting ${jobPostingId}`);
+      const matchResult = await matchCandidateToJob(candidateResume, jobRequirements);
+      
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user?.id,
+        action: "CANDIDATE_JOB_MATCH",
+        entityType: "candidate",
+        entityId: Number(candidateId),
+        details: {
+          candidateId: Number(candidateId),
+          jobPostingId: Number(jobPostingId),
+          matchScore: matchResult.score,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
+      // Enhance the result with additional context
+      const enhancedResult = {
+        ...matchResult,
+        candidateName: candidate.name,
+        jobTitle: jobPosting.title,
+        jobLocation: locationName,
+      };
+      
+      return res.json(enhancedResult);
+    } catch (error) {
+      console.error("Error matching candidate to job:", error);
+      return res.status(500).json({ message: "Error analyzing candidate match", error: error.message });
+    }
+  });
+
+  // Route for AI-powered candidate recommendations
+  app.post("/api/job-postings/:id/recommend-candidates", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { count = 5 } = req.body;
+      
+      // Get job posting details
+      const jobPosting = await storage.getJobPosting(Number(id));
+      
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(400).json({ message: "OpenAI API key not configured. Unable to perform candidate matching." });
+      }
+      
+      // Get all candidates from the database
+      const candidates = await storage.getCandidates();
+      
+      if (!candidates || candidates.length === 0) {
+        return res.json({ 
+          recommendations: [], 
+          analysisInsights: "No candidates available in the system for analysis."
+        });
+      }
+      
+      // Prepare location name for the job posting
+      let locationName;
+      if (jobPosting.locationId) {
+        const location = await storage.getLocation(jobPosting.locationId);
+        locationName = location?.name;
+      }
+      
+      // Format job and candidate data for the AI recommendation engine
+      const jobData = {
+        id: jobPosting.id,
+        title: jobPosting.title,
+        description: jobPosting.description,
+        requirements: jobPosting.requirements,
+        locationName: locationName
+      };
+      
+      const candidateData = candidates.map(candidate => ({
+        id: candidate.id,
+        name: candidate.name,
+        profile: candidate.summary || "",
+        skills: candidate.skills ? (typeof candidate.skills === 'string' ? 
+          candidate.skills.split(',').map(s => s.trim()) : 
+          candidate.skills) : [],
+        experience: candidate.experience || "",
+        resume: candidate.resume || ""
+      }));
+      
+      // Import the OpenAI service
+      const { recommendCandidates } = await import('./openai-service');
+      
+      // Get AI recommendations
+      console.log("Getting AI recommendations for job posting:", jobPosting.title);
+      const recommendations = await recommendCandidates(candidateData, jobData, Number(count));
+      
+      // Log recommendation for audit purposes
+      await storage.createAuditLog({
+        userId: req.user?.id,
+        action: "CANDIDATE_RECOMMENDATION",
+        entityType: "job_posting",
+        entityId: jobPosting.id,
+        details: {
+          jobPostingId: jobPosting.id,
+          jobTitle: jobPosting.title,
+          candidateCount: candidates.length,
+          recommendationCount: recommendations.recommendations.length,
+          timestamp: new Date().toISOString()
+        }
+      });
+      
+      return res.json(recommendations);
+    } catch (error) {
+      console.error("Error recommending candidates:", error);
+      res.status(500).json({ 
+        message: "Error generating candidate recommendations", 
+        error: error.message 
+      });
+    }
+  });
+
   // GDPR routes for data access and deletion
   app.post("/api/data-access-request", async (req: Request, res: Response) => {
     try {

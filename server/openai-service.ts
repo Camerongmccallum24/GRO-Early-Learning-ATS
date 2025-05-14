@@ -257,3 +257,113 @@ export async function analyzeCandidateSentiment(communicationLogs: string[]): Pr
     };
   }
 }
+
+/**
+ * Recommend candidates from a pool based on job requirements
+ * This function analyzes multiple candidates against job requirements and returns recommendations
+ */
+export async function recommendCandidates(
+  candidates: {
+    id: number;
+    name: string;
+    profile: string;
+    resume?: string;
+    skills?: string[];
+    experience?: string;
+  }[],
+  jobPosting: {
+    id: number;
+    title: string;
+    description: string;
+    requirements: string;
+    locationName?: string;
+  },
+  count: number = 5
+): Promise<{
+  recommendations: Array<{
+    candidateId: number;
+    name: string;
+    matchScore: number;
+    strengths: string[];
+    growthAreas: string[];
+    comments: string;
+  }>;
+  analysisInsights: string;
+}> {
+  try {
+    if (!candidates || candidates.length === 0) {
+      return {
+        recommendations: [],
+        analysisInsights: "No candidates available for analysis."
+      };
+    }
+
+    // Prepare concise candidate information for the prompt
+    const candidateInfo = candidates.map(c => {
+      return `Candidate ID: ${c.id}
+Name: ${c.name}
+Profile: ${c.profile || "No profile available"}
+Skills: ${c.skills?.join(', ') || "Not specified"}
+Experience: ${c.experience || "Not specified"}
+${c.resume ? `Resume: ${c.resume}` : ""}`;
+    }).join("\n\n");
+
+    // Prepare job posting information
+    const jobInfo = `
+Job ID: ${jobPosting.id}
+Title: ${jobPosting.title}
+Location: ${jobPosting.locationName || "Not specified"}
+Description: ${jobPosting.description}
+Requirements: ${jobPosting.requirements}
+`;
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert recruitment AI for a childcare organization that specializes in early learning. 
+          Your task is to analyze a pool of candidates against a job posting's requirements and provide intelligent recommendations.
+          Focus on matching skills, experience, and qualifications particularly relevant to childcare and early education.
+          
+          Your analysis should prioritize:
+          1. Relevant childcare qualifications and certifications
+          2. Experience working with children in educational settings
+          3. Required skills for the specific position
+          4. Cultural fit with an organization that values growth, care, and community
+          
+          Return a JSON object with:
+          - recommendations: Array of candidate recommendations, each containing:
+            - candidateId: The candidate's ID number
+            - name: The candidate's name
+            - matchScore: A score from 0-100 indicating match quality
+            - strengths: Array of the candidate's key strengths for this position
+            - growthAreas: Array of areas where the candidate could improve to better match the role
+            - comments: Brief personalized assessment of fit
+          - analysisInsights: Overall insights about the candidate pool and recommendation process
+          
+          Limit recommendations to the ${count} most suitable candidates, ordered by match quality (highest first).`
+        },
+        {
+          role: "user",
+          content: `JOB POSTING INFORMATION:\n${jobInfo}\n\nCANDIDATE POOL:\n${candidateInfo}\n\nPlease analyze and recommend the best ${count} candidates for this position with detailed matching information.`
+        }
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 2000
+    });
+
+    const result = JSON.parse(response.choices[0].message.content);
+    
+    return {
+      recommendations: result.recommendations || [],
+      analysisInsights: result.analysisInsights || "Analysis completed."
+    };
+  } catch (error) {
+    console.error("Error recommending candidates:", error);
+    return {
+      recommendations: [],
+      analysisInsights: "Error analyzing candidates. Please try again later."
+    };
+  }
+}
