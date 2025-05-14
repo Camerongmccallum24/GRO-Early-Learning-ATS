@@ -245,6 +245,9 @@ export default function Applications() {
                             <DropdownMenuItem onClick={() => handleUpdateStatus(application.id, "interview")}>
                               Interview
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(application.id, "interviewed")}>
+                              Interviewed
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleUpdateStatus(application.id, "offered")}>
                               Offered
                             </DropdownMenuItem>
@@ -290,6 +293,7 @@ export default function Applications() {
                   <SelectItem value="applied">Applied</SelectItem>
                   <SelectItem value="in_review">In Review</SelectItem>
                   <SelectItem value="interview">Interview</SelectItem>
+                  <SelectItem value="interviewed">Interviewed</SelectItem>
                   <SelectItem value="offered">Offered</SelectItem>
                   <SelectItem value="hired">Hired</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>

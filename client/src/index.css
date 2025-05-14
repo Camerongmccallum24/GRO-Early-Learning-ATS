@@ -134,6 +134,9 @@
   .status-interview {
     @apply bg-[#B3F5FF] text-cyan-800;
   }
+  .status-interviewed {
+    @apply bg-[#79E2F2] text-cyan-900;
+  }
   .status-offered {
     @apply bg-[#ABF5D1] text-green-800;
   }
