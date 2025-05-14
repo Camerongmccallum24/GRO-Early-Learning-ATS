@@ -3,10 +3,15 @@ import { Application } from '@shared/schema';
 
 // Initialize SendGrid
 const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY!);
+if (process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('SendGrid API key set successfully');
+} else {
+  console.error('SENDGRID_API_KEY environment variable not set');
+}
 
-// Default sender email
-const DEFAULT_FROM_EMAIL = 'hr@groearlylearning.com';
+// Default sender email - This should be a verified sender in SendGrid
+const DEFAULT_FROM_EMAIL = 'notifications@example.com'; // Replace with verified sender
 
 // Email templates for different application statuses
 const EMAIL_TEMPLATES = {
@@ -196,9 +201,15 @@ export async function sendCustomEmail(
   applicationId?: number
 ): Promise<boolean> {
   try {
+    // Check if SendGrid API key is set
+    if (!process.env.SENDGRID_API_KEY) {
+      console.error('SendGrid API key not set. Cannot send email.');
+      return false;
+    }
+    
     const msg = {
       to,
-      from: DEFAULT_FROM_EMAIL,
+      from: DEFAULT_FROM_EMAIL, // Ensure this is verified in SendGrid
       subject,
       text: message,
       html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -211,12 +222,36 @@ export async function sendCustomEmail(
       </div>`,
     };
 
-    await mailService.send(msg);
-    
-    console.log(`Custom email sent to ${to}${applicationId ? ` for application ID: ${applicationId}` : ''}`);
-    return true;
+    // For development, log email instead of sending if needed
+    if (process.env.NODE_ENV === 'development' && process.env.MOCK_EMAILS === 'true') {
+      console.log('MOCK EMAIL SENT:', {
+        to: msg.to,
+        from: msg.from,
+        subject: msg.subject,
+        text: msg.text
+      });
+      return true;
+    }
+
+    // Actual email sending
+    try {
+      await mailService.send(msg);
+      console.log(`Email sent successfully to ${to}${applicationId ? ` for application ID: ${applicationId}` : ''}`);
+      return true;
+    } catch (sendError: any) {
+      // Log detailed SendGrid error information
+      if (sendError.response) {
+        console.error('SendGrid API Error:', {
+          status: sendError.code,
+          errors: sendError.response.body.errors
+        });
+      } else {
+        console.error('Unknown SendGrid error:', sendError);
+      }
+      return false;
+    }
   } catch (error) {
-    console.error('Error sending custom email:', error);
+    console.error('Error in sendCustomEmail function:', error);
     return false;
   }
 }
