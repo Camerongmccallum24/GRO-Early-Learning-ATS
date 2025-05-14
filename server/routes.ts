@@ -237,6 +237,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Candidate and application routes
+  
+  // Get all candidates
+  app.get("/api/candidates", async (req: Request, res: Response) => {
+    try {
+      const candidates = await storage.getCandidates();
+      return res.json(candidates);
+    } catch (error) {
+      console.error("Get candidates error:", error);
+      return res.status(500).json({ message: "Error fetching candidates" });
+    }
+  });
+  
+  // Get specific candidate
+  app.get("/api/candidates/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const candidate = await storage.getCandidate(Number(id));
+      
+      if (!candidate) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+      
+      return res.json(candidate);
+    } catch (error) {
+      console.error("Get candidate error:", error);
+      return res.status(500).json({ message: "Error fetching candidate" });
+    }
+  });
+  
   app.post("/api/candidates", upload.single("resume"), async (req: Request, res: Response) => {
     try {
       // Cast req to any to access file property from multer
