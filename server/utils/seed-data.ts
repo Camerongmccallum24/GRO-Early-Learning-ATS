@@ -165,4 +165,59 @@ export async function seedSampleData() {
   } else {
     console.log(`${jobPostings.length} job postings already exist in the database`);
   }
+  
+  // Check if we have applications
+  const applications = await storage.getApplications();
+  if (applications.length === 0) {
+    console.log("No applications found. Adding sample applications...");
+    
+    // Get candidates and job postings
+    const candidates = await storage.getCandidates();
+    const jobPostings = await storage.getJobPostings();
+    
+    if (candidates.length > 0 && jobPostings.length > 0) {
+      const sampleApplications = [
+        {
+          candidateId: candidates[0].id,
+          jobPostingId: jobPostings[0].id,
+          status: "Interview Scheduled",
+          coverLetter: "Dear Hiring Manager,\n\nI am excited to apply for the Lead Educator position at GRO Early Learning. With my experience in early childhood education and passion for creating engaging learning environments, I believe I would be a great addition to your team.\n\nI look forward to the opportunity to discuss how my skills align with your needs.\n\nSincerely,\nEmma Johnson",
+          notes: "Strong candidate with relevant qualifications and experience",
+          appliedDate: new Date(new Date().setDate(new Date().getDate() - 7)),
+          createdAt: new Date(new Date().setDate(new Date().getDate() - 7)),
+          updatedAt: new Date()
+        },
+        {
+          candidateId: candidates[1].id,
+          jobPostingId: jobPostings[1].id,
+          status: "Under Review",
+          coverLetter: "Dear Hiring Team,\n\nI am writing to express my interest in the Early Childhood Teacher position. My experience in curriculum planning and inclusive education aligns perfectly with what you're looking for.\n\nThank you for considering my application.\n\nBest regards,\nMichael Chen",
+          notes: "Has good experience with diverse learning approaches",
+          appliedDate: new Date(new Date().setDate(new Date().getDate() - 3)),
+          createdAt: new Date(new Date().setDate(new Date().getDate() - 3)),
+          updatedAt: new Date()
+        },
+        {
+          candidateId: candidates[2].id,
+          jobPostingId: jobPostings[2].id,
+          status: "Application Received",
+          coverLetter: "Dear GRO Early Learning,\n\nI am applying for the Center Director position. With my extensive experience in early childhood leadership and center management, I am confident I can contribute to your organization's success.\n\nI am particularly drawn to your focus on growth, care, and community values.\n\nSincerely,\nSarah Williams",
+          notes: "Very experienced candidate with management background",
+          appliedDate: new Date(new Date().setDate(new Date().getDate() - 1)),
+          createdAt: new Date(new Date().setDate(new Date().getDate() - 1)),
+          updatedAt: new Date()
+        }
+      ];
+      
+      for (const application of sampleApplications) {
+        await storage.createApplication(application);
+      }
+      
+      console.log("Sample applications added successfully");
+    } else {
+      console.log("Could not add applications - no candidates or job postings available");
+    }
+  } else {
+    console.log(`${applications.length} applications already exist in the database`);
+  }
 }
