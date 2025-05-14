@@ -49,11 +49,11 @@ export default function Applications() {
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ["/api/applications", { status: statusFilter, locationId: locationFilter }],
     queryFn: async ({ queryKey }) => {
-      const [_, filterParams] = queryKey;
+      const [_, filterParams] = queryKey as [string, { status?: string, locationId?: string | number }];
       const params = new URLSearchParams();
       
-      if (filterParams.status) params.append("status", String(filterParams.status));
-      if (filterParams.locationId) params.append("locationId", String(filterParams.locationId));
+      if (filterParams.status && filterParams.status !== 'all') params.append("status", String(filterParams.status));
+      if (filterParams.locationId && filterParams.locationId !== 'all') params.append("locationId", String(filterParams.locationId));
       
       const url = `/api/applications${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await fetch(url, { credentials: "include" });

@@ -18,7 +18,10 @@ import {
 } from "@/components/ui/dialog";
 
 export default function JobPostings() {
-  const [filters, setFilters] = useState<{ location?: number | string; position?: string; status?: string }>({});
+  const [filters, setFilters] = useState<{ location?: number | string; position?: string; status?: string }>({
+    location: 'all',
+    status: 'all'
+  });
   const [jobToClose, setJobToClose] = useState<number | null>(null);
   const [jobToReopen, setJobToReopen] = useState<number | null>(null);
   const queryClient = useQueryClient();
@@ -28,11 +31,11 @@ export default function JobPostings() {
   const { data: jobPostings = [], isLoading } = useQuery({
     queryKey: ["/api/job-postings", filters],
     queryFn: async ({ queryKey }) => {
-      const [_, filterParams] = queryKey;
+      const [_, filterParams] = queryKey as [string, { location?: string | number; status?: string }];
       const params = new URLSearchParams();
       
-      if (filterParams.location) params.append("locationId", String(filterParams.location));
-      if (filterParams.status) params.append("status", String(filterParams.status));
+      if (filterParams.location && filterParams.location !== 'all') params.append("locationId", String(filterParams.location));
+      if (filterParams.status && filterParams.status !== 'all') params.append("status", String(filterParams.status));
       
       const url = `/api/job-postings${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await fetch(url, { credentials: "include" });
