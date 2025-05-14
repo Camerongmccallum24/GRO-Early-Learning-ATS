@@ -1,12 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useEffect } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 
 export default function Login() {
   const { isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Get error message from URL if it exists
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    if (error) {
+      setErrorMessage(decodeURIComponent(error));
+    }
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -15,7 +26,9 @@ export default function Login() {
   }, [isAuthenticated, navigate]);
 
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    // Use full URL to avoid issues with hostname 
+    const baseUrl = window.location.origin;
+    window.location.href = `${baseUrl}/api/login`;
   };
 
   return (
@@ -28,6 +41,11 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-2">
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t"></span>

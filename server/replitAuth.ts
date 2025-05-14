@@ -39,7 +39,7 @@ export function getSession() {
     name: "ats_session", // Custom cookie name
     cookie: {
       httpOnly: true,
-      secure: false, // Set to false for development
+      secure: process.env.NODE_ENV === 'production', // Only secure in production
       sameSite: 'lax',
       maxAge: sessionTtl,
       path: '/',
@@ -95,26 +95,29 @@ export async function setupAuth(app: Express) {
       verified(null, user);
     };
 
-    // Create a simplified strategy
-    const strategyName = "replitauth";
+    // Create a strategy for each domain in REPLIT_DOMAINS
+    const domains = process.env.REPLIT_DOMAINS!.split(",");
     
-    // Always use a relative URL for callback to avoid hostname issues
-    const callbackURL = '/api/callback';
-    
-    console.log("Creating simplified auth strategy");
-    console.log("Using relative callback URL:", callbackURL);
-    
-    const strategy = new Strategy(
-      {
-        name: strategyName,
-        config,
-        scope: "openid email profile offline_access",
-        callbackURL,
-      },
-      verify,
-    );
-    
-    passport.use(strategy);
+    for (const domain of domains) {
+      const strategyName = `replitauth:${domain}`;
+      const callbackURL = `https://${domain}/api/callback`;
+      
+      console.log(`Creating auth strategy for domain: ${domain}`);
+      console.log(`Using absolute callback URL: ${callbackURL}`);
+      
+      const strategy = new Strategy(
+        {
+          name: strategyName,
+          config,
+          scope: "openid email profile offline_access",
+          callbackURL,
+        },
+        verify,
+      );
+      
+      passport.use(strategy);
+      console.log(`Auth strategy created with name: ${strategyName}`);
+    }
     console.log(`Auth strategy created with name: ${strategyName}`);
   } catch (error) {
     console.error("Error setting up auth:", error);
@@ -126,17 +129,13 @@ export async function setupAuth(app: Express) {
   app.get("/api/login", (req, res, next) => {
     console.log("Login attempt with hostname:", req.hostname, "protocol:", req.protocol);
     try {
-      // Use detailed logging to trace the authentication flow
+      // Use a simpler configuration for auth
       passport.authenticate("replitauth", {
         prompt: "login consent",
-        scope: ["openid", "email", "profile", "offline_access"],
-        successReturnToOrRedirect: "/",
-        failureRedirect: "/login-failed",
       })(req, res, next);
     } catch (error) {
       console.error("Error during login authentication:", error);
-      // Instead of JSON error, redirect to an error page for better UX
-      res.redirect(`/?auth_error=${encodeURIComponent("Login failed")}`);
+      res.redirect(`/login?error=${encodeURIComponent("Login failed")}`);
     }
   });
 
@@ -144,19 +143,19 @@ export async function setupAuth(app: Express) {
     console.log("Callback received with hostname:", req.hostname, "protocol:", req.protocol);
     console.log("Query params:", req.query);
     
-    // Debug callback request details
     if (req.query.error) {
       console.error("Auth error from provider:", req.query.error, req.query.error_description);
+      return res.redirect(`/login?error=${encodeURIComponent(req.query.error_description || "Authentication error")}`);
     }
 
     try {
       passport.authenticate("replitauth", {
-        successReturnToOrRedirect: "/",
-        failureRedirect: "/login-failed",
+        successRedirect: "/", 
+        failureRedirect: "/login?error=Authentication+failed",
       })(req, res, next);
     } catch (error) {
       console.error("Error during callback:", error);
-      res.redirect(`/?auth_error=${encodeURIComponent("Authentication failed")}`);
+      res.redirect(`/login?error=${encodeURIComponent("Authentication failed")}`);
     }
   });
   
