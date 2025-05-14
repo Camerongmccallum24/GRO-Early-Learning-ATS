@@ -32,11 +32,17 @@ interface SidebarProps {
 export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
+  const [isPinned, setIsPinned] = useState(() => {
+    // Check localStorage for saved pinned state
+    return localStorage.getItem('sidebar-pinned') === 'true';
+  });
+  
   const [isCollapsed, setIsCollapsed] = useState(() => {
     // Check localStorage for saved state
     const savedState = localStorage.getItem('sidebar-collapsed');
     return savedState ? savedState === 'true' : false;
   });
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Reset mobile menu state when location changes
@@ -53,6 +59,22 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
     // Notify parent component if callback provided
     if (onCollapseChange) {
       onCollapseChange(newState);
+    }
+  };
+  
+  // Toggle pinned state
+  const togglePinned = () => {
+    const newPinnedState = !isPinned;
+    setIsPinned(newPinnedState);
+    localStorage.setItem('sidebar-pinned', String(newPinnedState));
+    
+    // Auto-expand sidebar when pinned
+    if (newPinnedState && isCollapsed) {
+      toggleCollapsed();
+    }
+    // Auto-collapse sidebar when unpinned (optional)
+    else if (!newPinnedState && !isCollapsed) {
+      toggleCollapsed();
     }
   };
 
@@ -114,9 +136,9 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
           variant="outline"
           size="icon"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-full bg-white shadow-md"
+          className="rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 h-12 w-12"
         >
-          <MenuIcon className="h-5 w-5" />
+          <MenuIcon className="h-6 w-6" />
         </Button>
       </div>
 
@@ -144,9 +166,31 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
             {/* Toggle collapse button - desktop only */}
             <button 
               onClick={toggleCollapsed}
-              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100"
+              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 group relative"
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? <ChevronRightIcon className="h-5 w-5" /> : <ChevronLeftIcon className="h-5 w-5" />}
+              <span className="sidebar-tooltip">{isCollapsed ? "Expand" : "Collapse"}</span>
+            </button>
+            
+            {/* Pin sidebar button - desktop only */}
+            <button 
+              onClick={togglePinned}
+              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 ml-1 group relative"
+              title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+            >
+              {isPinned ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m16 2-4.7 4.7-3.8-1.5 5.5 5.5-8 8V22l2-2 8-8 5.5 5.5-1.5-3.8L24 8z"/>
+                  <path d="M10.5 13.5 2 22"/>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="17" x2="12" y2="22" />
+                  <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
+                </svg>
+              )}
+              <span className="sidebar-tooltip">{isPinned ? "Unpin" : "Pin"}</span>
             </button>
             
             {/* Close button - mobile only */}

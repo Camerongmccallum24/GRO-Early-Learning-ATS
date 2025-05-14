@@ -234,7 +234,20 @@ export class DatabaseStorage implements IStorage {
     return newApplication;
   }
 
-  async updateApplicationStatus(id: number, status: string): Promise<Application> {
+  async updateApplicationStatus(id: number, status: string): Promise<Application & { previousStatus?: string }> {
+    // First get the current application to know its previous status
+    const [currentApplication] = await db
+      .select()
+      .from(applications)
+      .where(eq(applications.id, id));
+    
+    if (!currentApplication) {
+      throw new Error(`Application with ID ${id} not found`);
+    }
+    
+    const previousStatus = currentApplication.status;
+    
+    // Update the application status
     const [updatedApplication] = await db
       .update(applications)
       .set({ 
@@ -243,7 +256,25 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(applications.id, id))
       .returning();
-    return updatedApplication;
+    
+    // Log the status change in audit logs
+    await this.createAuditLog({
+      action: 'update_application_status',
+      entityId: String(id),
+      entityType: 'application',
+      userId: '123456789', // Will be replaced with actual user ID
+      details: JSON.stringify({ 
+        previousStatus, 
+        newStatus: status 
+      }),
+      createdAt: new Date()
+    });
+
+    // Return the updated application with previous status
+    return { 
+      ...updatedApplication, 
+      previousStatus 
+    };
   }
 
   // Interview methods
