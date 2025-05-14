@@ -350,11 +350,16 @@ export class DatabaseStorage implements IStorage {
       .from(applications)
       .where(sql`${applications.applicationDate} >= ${thirtyDaysAgo}`);
     
-    // Count upcoming interviews
-    const [interviewsResult] = await db
+    // Count upcoming interviews and interview-related application statuses
+    const [scheduledInterviewsResult] = await db
       .select({ count: sql<number>`count(*)` })
       .from(interviews)
       .where(sql`${interviews.scheduledDate} >= now() AND ${interviews.status} = 'scheduled'`);
+      
+    const [interviewApplicationsResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(applications)
+      .where(sql`${applications.status} = 'interview' OR ${applications.status} = 'interviewed'`);
     
     // Count positions filled (hired applications)
     const [filledResult] = await db
@@ -386,10 +391,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(sql<number>`count(*)`))
       .limit(5);
     
+    // Calculate total interview-related count (scheduled interviews + applications in interview process)
+    const totalInterviewCount = 
+      (scheduledInterviewsResult?.count || 0) + (interviewApplicationsResult?.count || 0);
+      
     return {
       activeJobs: activeJobsResult?.count || 0,
       newApplications: newApplicationsResult?.count || 0,
-      interviews: interviewsResult?.count || 0,
+      interviews: totalInterviewCount,
       filled: filledResult?.count || 0,
       applicationsByLocation,
       applicationsByPosition,
