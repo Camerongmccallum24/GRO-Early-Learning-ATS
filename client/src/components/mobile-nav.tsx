@@ -15,6 +15,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+// Define a type for the user object
+interface AuthUser {
+  id: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+  role?: string;
+}
+
 interface MobileNavProps {
   isOpen: boolean;
   onToggle: () => void;
@@ -90,7 +100,7 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
                 )}
               >
                 <Icon className="mr-3 h-6 w-6" />
-                {item.label}
+                <span className="sidebar-nav-label">{item.label}</span>
               </Link>
             );
           })}

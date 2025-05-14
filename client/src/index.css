@@ -71,6 +71,16 @@
   }
 }
 
+/* Fix for sidebar duplicate labels issue */
+.sidebar-item-label, .duplicate-sidebar-label {
+  display: none !important;
+}
+
+/* Ensure sidebar nav labels display correctly */
+.sidebar-nav-label {
+  display: inline-block;
+}
+
 @layer components {
   .status-applied {
     @apply bg-[#DFE1E6] text-gray-800;

@@ -8,10 +8,24 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { User } from "@shared/schema";
+
+// Define a type for the user object
+interface AuthUser {
+  id: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+  role?: string;
+}
 
 export function Sidebar() {
   const { user, logout } = useAuth();
   const [location] = useLocation();
+  
+  // Cast user to the AuthUser type
+  const authUser = user as AuthUser | undefined;
 
   const navigation = [
     {
@@ -41,7 +55,7 @@ export function Sidebar() {
     {
       name: "Settings",
       href: "/settings",
-      icon: (props) => (
+      icon: (props: React.SVGProps<SVGSVGElement>) => (
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
           viewBox="0 0 24 24" 
@@ -87,7 +101,7 @@ export function Sidebar() {
                       )}
                       aria-hidden="true"
                     />
-                    {item.name}
+                    <span className="sidebar-nav-label">{item.name}</span>
                   </div>
                 </Link>
               </li>
@@ -95,21 +109,21 @@ export function Sidebar() {
           </ul>
           <div className="mt-auto pb-5">
             <div className="mb-3">
-              {user && (
+              {authUser && (
                 <div className="flex items-center gap-2 p-3">
-                  {user.profileImageUrl && (
+                  {authUser.profileImageUrl && (
                     <img 
-                      src={user.profileImageUrl} 
+                      src={authUser.profileImageUrl} 
                       alt="Profile" 
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   )}
                   <div className="text-sm">
                     <div className="font-medium text-gray-900">
-                      {user.firstName ? `${user.firstName} ${user.lastName || ''}` : user.email || 'GRO Staff'}
+                      {authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}` : authUser.email || 'GRO Staff'}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {user.email || ''}
+                      {authUser.email || ''}
                     </div>
                   </div>
                 </div>
