@@ -30,17 +30,18 @@ function LoadingAuth() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
+    // Check if we have a saved collapsed state, and invert it (since expanded is the opposite of collapsed)
+    const savedCollapsedState = localStorage.getItem('sidebar-collapsed');
+    if (savedCollapsedState !== null) {
+      return savedCollapsedState === 'false'; // if not collapsed, then it's expanded
+    }
+    // Default to not expanded
+    return false;
+  });
+  
   const { user } = useAuth();
   const [location] = useLocation();
-
-  useEffect(() => {
-    // You could save sidebar state to localStorage here to persist it
-    const savedState = localStorage.getItem('sidebar-expanded');
-    if (savedState) {
-      setIsSidebarExpanded(savedState === 'true');
-    }
-  }, []);
   
   // Save sidebar state when it changes
   useEffect(() => {
@@ -52,7 +53,10 @@ function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Collapsible Sidebar (works for both desktop and mobile) */}
-      <Sidebar isMobile={true} />
+      <Sidebar 
+        isMobile={true} 
+        onCollapseChange={(collapsed) => setIsSidebarExpanded(!collapsed)} 
+      />
       
       {/* Main content with responsive margin to accommodate sidebar */}
       <div 

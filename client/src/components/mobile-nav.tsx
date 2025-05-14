@@ -34,6 +34,9 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  
+  // Cast user to AuthUser type
+  const authUser = user as AuthUser | undefined;
 
   const handleLogout = () => {
     window.location.href = "/api/logout";
@@ -71,7 +74,7 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
           </div>
         </div>
         <div className="flex h-8 w-8 rounded-full items-center justify-center bg-gray-300 text-gray-800">
-          {user?.firstName?.charAt(0) || user?.email?.charAt(0) || '?'}
+          {authUser?.firstName?.charAt(0) || authUser?.email?.charAt(0) || '?'}
         </div>
       </div>
       
@@ -108,13 +111,13 @@ export function MobileNav({ isOpen, onToggle }: MobileNavProps) {
           <div className="pt-4 mt-4 border-t border-sidebar-border">
             <div className="flex items-center px-2 py-2">
               <div className="flex h-10 w-10 rounded-full items-center justify-center bg-gray-300 text-gray-800">
-                {user?.firstName?.charAt(0) || user?.email?.charAt(0) || '?'}
+                {authUser?.firstName?.charAt(0) || authUser?.email?.charAt(0) || '?'}
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-white">
-                  {user?.firstName ? `${user?.firstName} ${user?.lastName || ''}` : user?.email || 'User'}
+                  {authUser?.firstName ? `${authUser?.firstName} ${authUser?.lastName || ''}` : authUser?.email || 'User'}
                 </p>
-                <p className="text-xs font-medium text-gray-300">{user?.role === 'hr_admin' ? 'HR Manager' : user?.role || 'User'}</p>
+                <p className="text-xs font-medium text-gray-300">{authUser?.role === 'hr_admin' ? 'HR Manager' : authUser?.role || 'User'}</p>
               </div>
             </div>
             <button 
