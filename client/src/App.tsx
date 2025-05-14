@@ -9,6 +9,7 @@ import JobPostings from "@/pages/job-postings";
 import JobPostingForm from "@/pages/job-posting-form";
 import Candidates from "@/pages/candidates";
 import Applications from "@/pages/applications";
+import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import { Sidebar } from "@/components/sidebar";
 import { MobileNav } from "@/components/mobile-nav";
