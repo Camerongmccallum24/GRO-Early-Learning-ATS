@@ -9,12 +9,23 @@ import JobPostings from "@/pages/job-postings";
 import JobPostingForm from "@/pages/job-posting-form";
 import Candidates from "@/pages/candidates";
 import Applications from "@/pages/applications";
-import Login from "@/pages/login";
 import { Sidebar } from "@/components/sidebar";
 import { MobileNav } from "@/components/mobile-nav";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/components/auth-provider";
+import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
+
+// Loading component to show during authentication
+function LoadingAuth() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-[#F4F5F7]">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-4 text-lg">Authenticating with Replit...</p>
+      </div>
+    </div>
+  );
+}
 
 function Layout({ children }: { children: React.ReactNode }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -26,7 +37,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, [location]);
 
   if (!isAuthenticated) {
-    return <Login />;
+    // Redirect to Replit Auth login
+    window.location.href = '/api/login';
+    return <LoadingAuth />;
   }
 
   return (
@@ -51,22 +64,30 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  const [, navigate] = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
-    }
-  }, [isAuthenticated, navigate]);
+  if (isLoading) {
+    return <LoadingAuth />;
+  }
 
-  return isAuthenticated ? <>{children}</> : null;
+  if (!isAuthenticated) {
+    // Redirect to Replit Auth login
+    window.location.href = '/api/login';
+    return null;
+  }
+
+  return <>{children}</>;
 }
 
 function Router() {
   return (
     <Switch>
-      <Route path="/login" component={Login} />
+      <Route path="/login">
+        {() => {
+          window.location.href = '/api/login';
+          return <LoadingAuth />;
+        }}
+      </Route>
       
       <Route path="/">
         {() => (

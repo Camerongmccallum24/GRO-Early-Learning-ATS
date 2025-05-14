@@ -1,122 +1,114 @@
 import { Link, useLocation } from "wouter";
-import { cn } from "@/lib/utils";
-import { useAuth } from "./auth-provider";
-import { 
-  Home, 
-  Briefcase, 
-  Users, 
-  ClipboardList, 
-  Settings,
-  LogOut
+import {
+  BarChart3Icon,
+  BriefcaseIcon,
+  ClipboardListIcon,
+  LogOutIcon,
+  UserIcon,
 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Sidebar() {
+  const { user, logout } = useAuth();
   const [location] = useLocation();
-  const { logout, user } = useAuth();
-  const { toast } = useToast();
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast({
-        title: "Logged out successfully",
-        variant: "default",
-      });
-    } catch (error) {
-      toast({
-        title: "Error logging out",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const navItems = [
-    { href: "/", label: "Dashboard", icon: Home },
-    { href: "/jobs", label: "Job Postings", icon: Briefcase },
-    { href: "/candidates", label: "Candidates", icon: Users },
-    { href: "/applications", label: "Applications", icon: ClipboardList },
-    { href: "/settings", label: "Settings", icon: Settings },
+  const navigation = [
+    {
+      name: "Dashboard",
+      href: "/",
+      icon: BarChart3Icon,
+      active: location === "/",
+    },
+    {
+      name: "Job Postings",
+      href: "/job-postings",
+      icon: BriefcaseIcon,
+      active: location === "/job-postings" || location.startsWith("/job-posting/"),
+    },
+    {
+      name: "Applications",
+      href: "/applications",
+      icon: ClipboardListIcon,
+      active: location === "/applications",
+    },
+    {
+      name: "Candidates",
+      href: "/candidates",
+      icon: UserIcon,
+      active: location === "/candidates",
+    },
   ];
 
   return (
-    <div className="hidden md:flex md:flex-shrink-0">
-      <div className="flex flex-col w-64 bg-sidebar">
-        <div className="flex items-center justify-center h-16 px-4 border-b border-opacity-20 border-sidebar-border">
-          <div className="flex items-center">
-            <div className="flex items-center justify-center p-2 bg-white rounded-md mr-2">
-              {/* GRO Logo */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#0052CC"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-8 w-8 text-primary"
-              >
-                <path d="M18 10.5L13.5 5.5 12 4 4 12 12 20 20 12 12 4"></path>
-                <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"></path>
-                <path d="M9.17 14.83a4 4 0 1 0 0-5.66"></path>
-              </svg>
-            </div>
-            <div>
-              <span className="text-white font-semibold text-lg">GRO</span>
-              <span className="text-white text-xs block -mt-1">Early Learning</span>
-            </div>
+    <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+      <div className="flex h-screen flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-[#FFFFFF] px-5">
+        <div className="flex h-16 shrink-0 items-center justify-start space-x-2">
+          <div className="flex items-center justify-center rounded-lg bg-primary w-10 h-10">
+            <span className="text-lg font-bold text-white">G</span>
           </div>
+          <h1 className="text-xl font-semibold text-gray-900">GRO ATS</h1>
         </div>
-        <div className="flex flex-col flex-grow">
-          <nav className="flex-1 px-2 py-4 space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location === item.href;
-              
-              return (
-                <Link 
-                  key={item.href} 
-                  href={item.href}
-                  className={cn(
-                    "flex items-center px-2 py-2 text-base font-medium rounded-md",
-                    isActive 
-                      ? "text-white bg-primary" 
-                      : "text-gray-300 hover:bg-gray-700"
-                  )}
-                >
-                  <Icon className="mr-3 h-6 w-6" />
-                  {item.label}
+        <nav className="mt-5 flex flex-1 flex-col">
+          <ul className="flex flex-1 flex-col gap-y-1">
+            {navigation.map((item) => (
+              <li key={item.name}>
+                <Link href={item.href}>
+                  <a
+                    className={cn(
+                      item.active
+                        ? "bg-primary text-white"
+                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                      "group flex gap-x-3 rounded-md p-3 text-sm font-semibold"
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        item.active ? "text-white" : "text-gray-500 group-hover:text-gray-900",
+                        "h-5 w-5 shrink-0"
+                      )}
+                      aria-hidden="true"
+                    />
+                    {item.name}
+                  </a>
                 </Link>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="flex-shrink-0 flex border-t border-sidebar-border p-4">
-          <div className="flex-shrink-0 w-full group">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="flex h-8 w-8 rounded-full items-center justify-center bg-gray-300 text-gray-800">
-                  {user?.name?.charAt(0) || '?'}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-auto pb-5">
+            <div className="mb-3">
+              {user && (
+                <div className="flex items-center gap-2 p-3">
+                  {user.profileImageUrl && (
+                    <img 
+                      src={user.profileImageUrl} 
+                      alt="Profile" 
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  )}
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900">
+                      {user.firstName ? `${user.firstName} ${user.lastName || ''}` : user.email || 'GRO Staff'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {user.email || ''}
+                    </div>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
-                  <p className="text-xs font-medium text-gray-300">{user?.role === 'hr_admin' ? 'HR Manager' : user?.role}</p>
-                </div>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleLogout}
-                className="text-gray-300 hover:text-white hover:bg-gray-700"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
+              )}
             </div>
+            <button
+              onClick={logout}
+              className="group flex w-full items-center gap-x-3 rounded-md p-3 text-sm font-semibold text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <LogOutIcon
+                className="h-5 w-5 shrink-0 text-gray-500 group-hover:text-gray-900"
+                aria-hidden="true"
+              />
+              Log Out
+            </button>
           </div>
-        </div>
+        </nav>
       </div>
     </div>
   );

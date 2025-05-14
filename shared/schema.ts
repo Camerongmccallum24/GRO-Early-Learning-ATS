@@ -1,25 +1,37 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, pgEnum, varchar, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
 // Users (for HR admin accounts)
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
   role: text("role").default("hr_admin").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
+export const upsertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
+  updatedAt: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Job application status enum
@@ -79,7 +91,7 @@ export const jobPostings = pgTable("job_postings", {
   status: jobStatusEnum("status").default("draft").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  createdById: integer("created_by_id").references(() => users.id),
+  createdById: varchar("created_by_id").references(() => users.id),
 });
 
 export const jobPostingsRelations = relations(jobPostings, ({ one, many }) => ({
@@ -170,7 +182,7 @@ export const interviews = pgTable("interviews", {
   scheduledDate: timestamp("scheduled_date").notNull(),
   duration: integer("duration").default(60).notNull(), // in minutes
   interviewType: text("interview_type").default("in-person").notNull(),
-  interviewerId: integer("interviewer_id").references(() => users.id),
+  interviewerId: varchar("interviewer_id").references(() => users.id),
   notes: text("notes"),
   status: text("status").default("scheduled").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -198,7 +210,7 @@ export type Interview = typeof interviews.$inferSelect;
 // Audit Logs for GDPR and security
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: varchar("user_id").references(() => users.id),
   action: text("action").notNull(),
   details: text("details"),
   ipAddress: text("ip_address"),

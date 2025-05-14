@@ -1,5 +1,5 @@
 import { 
-  users, type User, type InsertUser,
+  users, type User, type UpsertUser,
   jobPostings, type JobPosting, type InsertJobPosting,
   candidates, type Candidate, type InsertCandidate,
   applications, type Application, type InsertApplication,
@@ -9,15 +9,12 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, inArray, isNull, sql } from "drizzle-orm";
-import bcrypt from "bcryptjs";
 
 // Storage interface
 export interface IStorage {
   // User methods
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  validateUserCredentials(username: string, password: string): Promise<User | null>;
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Location methods
   getLocations(): Promise<Location[]>;
@@ -67,31 +64,24 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // User methods
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+  async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values({ ...insertUser, password: hashedPassword })
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
       .returning();
     return user;
-  }
-
-  async validateUserCredentials(username: string, password: string): Promise<User | null> {
-    const user = await this.getUserByUsername(username);
-    if (!user) return null;
-    
-    const isValid = await bcrypt.compare(password, user.password);
-    return isValid ? user : null;
   }
 
   // Location methods

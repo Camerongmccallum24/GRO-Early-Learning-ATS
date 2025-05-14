@@ -1,14 +1,30 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request as ExpressRequest, Response } from "express";
+
+// Extended Request type to include user from Replit Auth
+interface Request extends ExpressRequest {
+  user?: {
+    claims: {
+      sub: string;
+      email?: string;
+      first_name?: string;
+      last_name?: string;
+      profile_image_url?: string;
+    };
+    access_token?: string;
+    refresh_token?: string;
+    expires_at?: number;
+  };
+  isAuthenticated(): boolean;
+}
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { parseResume } from "./resume-parser";
-import session from "express-session";
 import { z } from "zod";
-import { insertJobPostingSchema, insertCandidateSchema, insertApplicationSchema } from "@shared/schema";
-import MemoryStore from "memorystore";
+import { upsertUserSchema, insertJobPostingSchema, insertCandidateSchema, insertApplicationSchema } from "@shared/schema";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 
 // Define upload directory and setup multer
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -46,109 +62,33 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
-  // Setup session
-  const SessionStore = MemoryStore(session);
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || "groearlylearning-ats-secret",
-      resave: false,
-      saveUninitialized: false,
-      cookie: { secure: process.env.NODE_ENV === "production", maxAge: 24 * 60 * 60 * 1000 },
-      store: new SessionStore({
-        checkPeriod: 86400000, // prune expired entries every 24h
-      }),
-    })
-  );
+  // Set up Replit Auth
+  await setupAuth(app);
 
-  // Authentication routes
-  app.post("/api/login", async (req: Request, res: Response) => {
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      const user = await storage.validateUserCredentials(username, password);
-      
-      if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      if (req.session) {
-        req.session.userId = user.id;
-        req.session.username = user.username;
-        req.session.role = user.role;
-      }
-      
-      // Create audit log
-      await storage.createAuditLog({
-        userId: user.id,
-        action: "login",
-        details: "User logged in successfully",
-        ipAddress: req.ip,
-        userAgent: req.headers["user-agent"],
-      });
-      
-      return res.json({ 
-        id: user.id, 
-        username: user.username, 
-        name: user.name, 
-        email: user.email, 
-        role: user.role 
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      return res.status(500).json({ message: "Internal server error during login" });
-    }
-  });
-  
-  app.post("/api/logout", (req: Request, res: Response) => {
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          return res.status(500).json({ message: "Error logging out" });
-        }
-        res.clearCookie("connect.sid");
-        return res.json({ message: "Logged out successfully" });
-      });
-    } else {
-      return res.json({ message: "Already logged out" });
-    }
-  });
-  
-  app.get("/api/me", async (req: Request, res: Response) => {
-    try {
-      if (!req.session || !req.session.userId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      const user = await storage.getUser(req.session.userId);
-      
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      return res.json({ 
-        id: user.id, 
-        username: user.username, 
-        name: user.name, 
-        email: user.email, 
-        role: user.role 
+      // Create audit log
+      await storage.createAuditLog({
+        userId: userId,
+        action: "login",
+        details: "User authenticated via Replit Auth",
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
       });
+      
+      res.json(user);
     } catch (error) {
-      console.error("Get current user error:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
     }
   });
-  
-  // Authentication middleware
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.session || !req.session.userId) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
   
   // Location routes
   app.get("/api/locations", async (req: Request, res: Response) => {
@@ -201,14 +141,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add the current user as the creator
       const jobPostingWithUser = {
         ...jobPostingData,
-        createdById: req.session!.userId,
+        createdById: req.user?.claims?.sub,
       };
       
       const newJobPosting = await storage.createJobPosting(jobPostingWithUser);
       
       // Create audit log
       await storage.createAuditLog({
-        userId: req.session!.userId,
+        userId: req.user?.claims?.sub,
         action: "create_job_posting",
         details: `Created job posting ID: ${newJobPosting.id}`,
         ipAddress: req.ip,
@@ -240,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create audit log
       await storage.createAuditLog({
-        userId: req.session!.userId,
+        userId: req.user?.claims?.sub,
         action: "update_job_posting",
         details: `Updated job posting ID: ${id}`,
         ipAddress: req.ip,
@@ -271,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create audit log
       await storage.createAuditLog({
-        userId: req.session!.userId,
+        userId: req.user?.claims?.sub,
         action: "delete_job_posting",
         details: `Deleted job posting ID: ${id}`,
         ipAddress: req.ip,
@@ -288,7 +228,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Candidate and application routes
   app.post("/api/candidates", upload.single("resume"), async (req: Request, res: Response) => {
     try {
-      const file = req.file;
+      // Cast req to any to access file property from multer
+      const file = (req as any).file;
       let candidateData = req.body;
       
       if (file) {
@@ -428,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create audit log
       await storage.createAuditLog({
-        userId: req.session!.userId,
+        userId: req.user?.claims?.sub,
         action: "update_application_status",
         details: `Updated application ID: ${id} status to: ${status}`,
         ipAddress: req.ip,
