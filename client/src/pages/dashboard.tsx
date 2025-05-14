@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { OverviewCard } from "@/components/overview-card";
 import { ApplicationStatusBadge } from "@/components/application-status-badge";
 import { formatDate } from "@/lib/utils";
-import { Briefcase, UserPlus, Calendar, Check, ChevronRight } from "lucide-react";
+import { Briefcase, UserPlus, Calendar, Check, ChevronRight, SparklesIcon, BarChart3Icon } from "lucide-react";
 import { Link } from "wouter";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -71,6 +71,73 @@ export default function Dashboard() {
           linkTo="/applications?status=hired"
         />
       </div>
+      
+      {/* AI-Powered Candidate Matching Insights Card */}
+      <Card className="relative overflow-hidden border-primary/20">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full"></div>
+        <CardHeader className="relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <SparklesIcon className="h-4 w-4 text-primary" />
+            </div>
+            <CardTitle className="text-lg leading-6 font-medium">AI-Powered Candidate Matching</CardTitle>
+          </div>
+          <CardDescription>
+            Intelligent matching technology helps you find the perfect candidates for your open positions
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-medium text-sm">Candidate Fit Analysis</h3>
+                <div className="h-6 w-6 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <Check className="h-3 w-3 text-emerald-600" />
+                </div>
+              </div>
+              <p className="text-gray-600 text-xs mb-3">
+                Analyze how well candidates match your job requirements with detailed skill breakdowns
+              </p>
+              <Link href="/candidates" className="text-primary text-xs font-medium flex items-center">
+                View Candidates
+                <ChevronRight className="h-3 w-3 ml-1" />
+              </Link>
+            </div>
+            
+            <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-medium text-sm">Smart Recommendations</h3>
+                <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                  <UserPlus className="h-3 w-3 text-blue-600" />
+                </div>
+              </div>
+              <p className="text-gray-600 text-xs mb-3">
+                Get intelligent recommendations for candidates that best match your job requirements
+              </p>
+              <Link href="/jobs" className="text-primary text-xs font-medium flex items-center">
+                View Job Postings
+                <ChevronRight className="h-3 w-3 ml-1" />
+              </Link>
+            </div>
+            
+            <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-medium text-sm">Qualification Analysis</h3>
+                <div className="h-6 w-6 rounded-full bg-amber-100 flex items-center justify-center">
+                  <BarChart3Icon className="h-3 w-3 text-amber-600" />
+                </div>
+              </div>
+              <p className="text-gray-600 text-xs mb-3">
+                Visual breakdown of candidate qualifications across key domains like skills and experience
+              </p>
+              <Link href="/applications" className="text-primary text-xs font-medium flex items-center">
+                View Applications
+                <ChevronRight className="h-3 w-3 ml-1" />
+              </Link>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Applications */}
       <Card className="shadow overflow-hidden">
