@@ -118,7 +118,6 @@ export async function setupAuth(app: Express) {
       passport.use(strategy);
       console.log(`Auth strategy created with name: ${strategyName}`);
     }
-    console.log(`Auth strategy created with name: ${strategyName}`);
   } catch (error) {
     console.error("Error setting up auth:", error);
   }
@@ -129,8 +128,11 @@ export async function setupAuth(app: Express) {
   app.get("/api/login", (req, res, next) => {
     console.log("Login attempt with hostname:", req.hostname, "protocol:", req.protocol);
     try {
-      // Use a simpler configuration for auth
-      passport.authenticate("replitauth", {
+      // Use the domain-specific strategy
+      const strategyName = `replitauth:${req.hostname}`;
+      console.log("Using strategy:", strategyName);
+      
+      passport.authenticate(strategyName, {
         prompt: "login consent",
       })(req, res, next);
     } catch (error) {
@@ -149,7 +151,10 @@ export async function setupAuth(app: Express) {
     }
 
     try {
-      passport.authenticate("replitauth", {
+      const strategyName = `replitauth:${req.hostname}`;
+      console.log("Using strategy for callback:", strategyName);
+      
+      passport.authenticate(strategyName, {
         successRedirect: "/", 
         failureRedirect: "/login?error=Authentication+failed",
       })(req, res, next);
