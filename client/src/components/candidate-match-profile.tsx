@@ -112,13 +112,17 @@ export function CandidateMatchProfile({ candidateId, candidateName }: CandidateM
     
     let score = match.score * 0.5; // Base score is half of the overall match
     
+    // Safely handle undefined or null arrays
+    const matchedSkills = match.matchedSkills || [];
+    const missingSkills = match.missingSkills || [];
+    
     // Count matching skills that contain any of the keywords
-    const relevantMatches = match.matchedSkills.filter(skill => 
+    const relevantMatches = matchedSkills.filter(skill => 
       keywords.some(keyword => skill.toLowerCase().includes(keyword.toLowerCase()))
     ).length;
     
     // Count missing skills that contain any of the keywords
-    const relevantMissing = match.missingSkills.filter(skill => 
+    const relevantMissing = missingSkills.filter(skill => 
       keywords.some(keyword => skill.toLowerCase().includes(keyword.toLowerCase()))
     ).length;
     
@@ -305,10 +309,10 @@ export function CandidateMatchProfile({ candidateId, candidateName }: CandidateM
                   <div>
                     <h4 className="text-sm font-medium mb-2 flex items-center gap-1.5">
                       <CheckCircleIcon className="h-4 w-4 text-green-600" />
-                      Matched Skills ({matchData.matchedSkills.length})
+                      Matched Skills ({matchData.matchedSkills ? matchData.matchedSkills.length : 0})
                     </h4>
                     <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md min-h-[100px]">
-                      {matchData.matchedSkills.length > 0 ? (
+                      {matchData.matchedSkills && matchData.matchedSkills.length > 0 ? (
                         matchData.matchedSkills.map(skill => renderSkill(skill, true))
                       ) : (
                         <p className="text-sm text-muted-foreground">No matched skills identified</p>
@@ -319,10 +323,10 @@ export function CandidateMatchProfile({ candidateId, candidateName }: CandidateM
                   <div>
                     <h4 className="text-sm font-medium mb-2 flex items-center gap-1.5">
                       <XCircleIcon className="h-4 w-4 text-amber-600" />
-                      Missing Skills ({matchData.missingSkills.length})
+                      Missing Skills ({matchData.missingSkills ? matchData.missingSkills.length : 0})
                     </h4>
                     <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-md min-h-[100px]">
-                      {matchData.missingSkills.length > 0 ? (
+                      {matchData.missingSkills && matchData.missingSkills.length > 0 ? (
                         matchData.missingSkills.map(skill => renderSkill(skill, false))
                       ) : (
                         <p className="text-sm text-muted-foreground">No missing skills identified</p>

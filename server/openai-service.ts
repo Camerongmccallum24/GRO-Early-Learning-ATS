@@ -131,10 +131,11 @@ export async function matchCandidateToJob(
           Analyze how well a candidate's qualifications match with job requirements.
           Return a JSON object with:
           - score (number from 0-100 representing match percentage)
-          - matchedSkills (array of skills the candidate has that match requirements)
-          - missingSkills (array of required skills the candidate lacks)
+          - matchedSkills (array of strings, each representing skills the candidate has that match requirements)
+          - missingSkills (array of strings, each representing required skills the candidate lacks)
           - comments (string with brief assessment of candidate fit)
-          Focus on early childhood education qualifications and experience.`,
+          Focus on early childhood education qualifications and experience.
+          Always return arrays for matchedSkills and missingSkills, even if empty.`,
         },
         {
           role: "user",
@@ -144,7 +145,20 @@ export async function matchCandidateToJob(
       response_format: { type: "json_object" },
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    // Parse and ensure proper format
+    const parsed = JSON.parse(response.choices[0].message.content);
+    
+    // Ensure we have the expected properties with default values as fallback
+    const result = {
+      score: typeof parsed.score === 'number' ? parsed.score : 0,
+      matchedSkills: Array.isArray(parsed.matchedSkills) ? parsed.matchedSkills : [],
+      missingSkills: Array.isArray(parsed.missingSkills) ? parsed.missingSkills : [],
+      comments: typeof parsed.comments === 'string' ? parsed.comments : 
+                "Analysis complete. Review matched and missing skills for details."
+    };
+    
+    console.log("Candidate match analysis result:", result);
+    return result;
   } catch (error) {
     console.error("Error matching candidate to job:", error);
     return {
