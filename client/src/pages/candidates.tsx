@@ -151,39 +151,39 @@ export default function Candidates() {
       {/* Candidate Details Dialog */}
       {selectedCandidate && (
         <Dialog open={!!selectedCandidate} onOpenChange={() => setSelectedCandidate(null)}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-2">
               <DialogTitle>Candidate Profile</DialogTitle>
-              <DialogDescription>
-                Detailed information about the candidate
+              <DialogDescription className="text-xs">
+                Detailed information about {selectedCandidate.name}
               </DialogDescription>
             </DialogHeader>
-            <div className="mt-4">
-              <div className="flex flex-col md:flex-row gap-6">
+            <div className="mt-2">
+              <div className="flex flex-col md:flex-row gap-4">
                 <div className="md:w-1/3">
                   <div className="flex flex-col items-center">
-                    <div className="h-24 w-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                      <div className="text-gray-600 font-medium text-3xl">
+                    <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                      <div className="text-gray-600 font-medium text-xl">
                         {selectedCandidate.name?.charAt(0) || "?"}
                       </div>
                     </div>
-                    <h3 className="text-lg font-medium text-center">{selectedCandidate.name}</h3>
-                    <p className="text-sm text-gray-500 text-center mb-4">{selectedCandidate.email}</p>
+                    <h3 className="text-base font-medium text-center">{selectedCandidate.name}</h3>
+                    <p className="text-xs text-gray-500 text-center mb-2">{selectedCandidate.email}</p>
                     
                     {selectedCandidate.phone && (
-                      <p className="text-sm text-center mb-2">
+                      <p className="text-xs text-center mb-2">
                         <span className="font-medium">Phone:</span> {selectedCandidate.phone}
                       </p>
                     )}
                     
                     {selectedCandidate.resumePath && (
-                      <Button variant="outline" size="sm" className="w-full mb-2">
-                        <FileIcon className="h-4 w-4 mr-2" /> 
+                      <Button variant="outline" size="sm" className="w-full mb-2 text-xs py-1 px-2 h-auto">
+                        <FileIcon className="h-3 w-3 mr-1" /> 
                         View Resume
                       </Button>
                     )}
                     
-                    <p className="text-xs text-gray-500 text-center mt-4">
+                    <p className="text-xs text-gray-500 text-center mt-2">
                       Applied on {formatDate(selectedCandidate.createdAt)}
                     </p>
                   </div>
@@ -191,34 +191,34 @@ export default function Candidates() {
                 
                 <div className="md:w-2/3">
                   <Tabs defaultValue="education">
-                    <TabsList className="grid grid-cols-3 mb-4">
-                      <TabsTrigger value="education">Education</TabsTrigger>
-                      <TabsTrigger value="experience">Experience</TabsTrigger>
-                      <TabsTrigger value="skills">Skills</TabsTrigger>
+                    <TabsList className="grid grid-cols-3 mb-2">
+                      <TabsTrigger value="education" className="text-xs py-1 h-8">Education</TabsTrigger>
+                      <TabsTrigger value="experience" className="text-xs py-1 h-8">Experience</TabsTrigger>
+                      <TabsTrigger value="skills" className="text-xs py-1 h-8">Skills</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="education">
-                      <div className="bg-gray-50 p-4 rounded-md">
-                        <h4 className="font-medium mb-2">Education & Qualifications</h4>
-                        <p className="text-sm whitespace-pre-line">
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <h4 className="font-medium mb-1 text-sm">Education & Qualifications</h4>
+                        <p className="text-xs whitespace-pre-line max-h-[150px] overflow-y-auto">
                           {selectedCandidate.education || "No education information provided."}
                         </p>
                       </div>
                     </TabsContent>
                     
                     <TabsContent value="experience">
-                      <div className="bg-gray-50 p-4 rounded-md">
-                        <h4 className="font-medium mb-2">Professional Experience</h4>
-                        <p className="text-sm whitespace-pre-line">
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <h4 className="font-medium mb-1 text-sm">Professional Experience</h4>
+                        <p className="text-xs whitespace-pre-line max-h-[150px] overflow-y-auto">
                           {selectedCandidate.experience || "No experience information provided."}
                         </p>
                       </div>
                     </TabsContent>
                     
                     <TabsContent value="skills">
-                      <div className="bg-gray-50 p-4 rounded-md">
-                        <h4 className="font-medium mb-2">Skills & Competencies</h4>
-                        <p className="text-sm whitespace-pre-line">
+                      <div className="bg-gray-50 p-3 rounded-md">
+                        <h4 className="font-medium mb-1 text-sm">Skills & Competencies</h4>
+                        <p className="text-xs whitespace-pre-line max-h-[150px] overflow-y-auto">
                           {selectedCandidate.skills || "No skills information provided."}
                         </p>
                       </div>
@@ -226,10 +226,10 @@ export default function Candidates() {
                   </Tabs>
                   
                   {/* Candidate Applications Section */}
-                  <div className="mt-6">
-                    <h4 className="font-medium mb-2">Applications</h4>
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <p className="text-sm">
+                  <div className="mt-3">
+                    <h4 className="font-medium mb-1 text-sm">Applications</h4>
+                    <div className="bg-gray-50 p-3 rounded-md">
+                      <p className="text-xs">
                         Candidate applications will be displayed here when available.
                       </p>
                     </div>
@@ -237,10 +237,11 @@ export default function Candidates() {
                   
                   {/* AI-Powered Match Analysis */}
                   {selectedCandidate && selectedCandidate.id && (
-                    <div className="mt-6">
+                    <div className="mt-3">
                       <CandidateMatchProfile 
                         candidateId={selectedCandidate.id} 
                         candidateName={selectedCandidate.name || "Candidate"}
+                        compact={true}
                       />
                     </div>
                   )}
