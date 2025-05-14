@@ -361,6 +361,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Schedule a video interview for an application
+  app.post("/api/applications/:id/schedule-interview", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const {
+        scheduledDate,
+        duration,
+        interviewType,
+        videoLink,
+        recordingPermission,
+        notes,
+      } = req.body;
+      
+      // Basic validation
+      if (!scheduledDate || !duration || !interviewType) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Verify the application exists
+      const application = await storage.getApplication(Number(id));
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      // Schedule the interview
+      const interview = await storage.scheduleVideoInterview(Number(id), {
+        applicationId: Number(id),
+        scheduledDate: new Date(scheduledDate),
+        duration: Number(duration),
+        interviewType: interviewType,
+        interviewerId: req.user?.id,
+        videoLink: videoLink,
+        recordingPermission: recordingPermission,
+        location: "Video Conference", // For video interviews, 'location' is virtual
+        notes: notes || "",
+        status: "scheduled"
+      });
+      
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user?.id,
+        action: "schedule_interview",
+        details: `Scheduled ${interviewType} interview for application ID: ${id}`,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      return res.json(interview);
+    } catch (error) {
+      console.error("Schedule interview error:", error);
+      return res.status(500).json({ message: "Error scheduling interview" });
+    }
+  });
+  
+  // Retrieve communications for an application
+  app.get("/api/applications/:id/communications", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const logs = await storage.getApplicationCommunicationLogs(Number(id));
+      return res.json(logs);
+    } catch (error) {
+      console.error("Get application communications error:", error);
+      return res.status(500).json({ message: "Error fetching communication logs" });
+    }
+  });
+  
+  // Retrieve communications for a candidate
+  app.get("/api/candidates/:id/communications", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      
+      const logs = await storage.getCommunicationLogs(Number(id));
+      return res.json(logs);
+    } catch (error) {
+      console.error("Get candidate communications error:", error);
+      return res.status(500).json({ message: "Error fetching communication logs" });
+    }
+  });
+  
   // Route for sending custom email to a candidate
   app.post("/api/applications/:id/send-email", isAuthenticated, async (req: Request, res: Response) => {
     try {
@@ -504,6 +584,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Test route for Gmail integration
+  app.get("/api/test/gmail", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user?.email) {
+        return res.status(400).json({ message: "User email not found" });
+      }
+      
+      // Import the Gmail service
+      const { sendCustomEmail } = await import('./gmail-service');
+      
+      // Send a test email to the current user
+      const emailSent = await sendCustomEmail(
+        req.user.email,
+        "ATS Email System Test",
+        "<p>This is a test email from your GRO Early Learning ATS system.</p><p>If you received this email, Gmail integration is working correctly!</p>"
+      );
+      
+      if (emailSent) {
+        // Create audit log
+        await storage.createAuditLog({
+          userId: req.user?.id,
+          action: "test_gmail",
+          details: "Sent test email via Gmail",
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"],
+        });
+        
+        // Log the communication if there are candidates in the system
+        try {
+          const candidates = await storage.getCandidates();
+          if (candidates.length > 0) {
+            await storage.createCommunicationLog({
+              candidateId: candidates[0].id,
+              type: "test_email",
+              subject: "ATS Email System Test",
+              message: "This is a test email from your GRO Early Learning ATS system. If you received this email, Gmail integration is working correctly!",
+              direction: "outbound",
+              initiatedBy: req.user?.id,
+              metadata: { 
+                test: true,
+                deliveryStatus: "sent" 
+              }
+            });
+          }
+        } catch (logError) {
+          console.error("Could not log test communication:", logError);
+        }
+        
+        return res.json({ message: "Test email sent successfully" });
+      } else {
+        return res.status(500).json({ message: "Failed to send test email" });
+      }
+    } catch (error) {
+      console.error("Gmail test error:", error);
+      return res.status(500).json({ message: "Error testing Gmail integration", error: String(error) });
+    }
+  });
+
   // GDPR routes for data access and deletion
   app.post("/api/data-access-request", async (req: Request, res: Response) => {
     try {
