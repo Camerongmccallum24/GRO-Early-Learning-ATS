@@ -164,21 +164,25 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
           {/* Header with logo and collapse toggle */}
           <div className={cn(
             "flex h-20 shrink-0 items-center border-b border-gray-200 px-4",
-            isCollapsed ? "justify-center" : "justify-between"
+            isCollapsed ? "justify-center" : "justify-center"
           )}>
-            <div className={cn("flex flex-col items-center", isCollapsed ? "justify-center" : "justify-start")}>
-              <img src={groLogo} alt="GRO Early Learning" className="h-12 object-contain" />
+            <div className={cn(
+              "flex flex-col items-center justify-center",
+              isCollapsed ? "w-full" : "mx-auto"
+            )}>
+              <img src={groLogo} alt="GRO Early Learning" className="h-11 object-contain" />
               {!isCollapsed && 
-                <div className="mt-1">
+                <div className="mt-1 text-center">
                   <span className="text-xs font-medium text-gray-600">Applicant Tracking System</span>
                 </div>
               }
             </div>
             
+            
             {/* Toggle collapse button - desktop only */}
             <button 
               onClick={toggleCollapsed}
-              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 group relative"
+              className="absolute right-4 top-4 hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 group relative"
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {isCollapsed ? <ChevronRightIcon className="h-5 w-5" /> : <ChevronLeftIcon className="h-5 w-5" />}
@@ -188,7 +192,7 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
             {/* Pin sidebar button - desktop only */}
             <button 
               onClick={togglePinned}
-              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 ml-1 group relative"
+              className="absolute right-14 top-4 hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 group relative"
               title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
             >
               {isPinned ? (
