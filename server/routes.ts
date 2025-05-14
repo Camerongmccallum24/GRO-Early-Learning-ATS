@@ -397,6 +397,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Failed to send email" });
       }
       
+      // Log the communication in the database
+      await storage.createCommunicationLog({
+        candidateId: application.candidateId,
+        applicationId: Number(id),
+        type: "email",
+        subject,
+        message,
+        direction: "outbound",
+        initiatedBy: req.user?.id,
+        metadata: { 
+          deliveryStatus: "sent" 
+        }
+      });
+      
       // Create audit log
       await storage.createAuditLog({
         userId: req.user?.id,

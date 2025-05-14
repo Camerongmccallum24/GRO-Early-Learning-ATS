@@ -143,6 +143,43 @@ export const insertCandidateSchema = createInsertSchema(candidates).omit({
 export type InsertCandidate = z.infer<typeof insertCandidateSchema>;
 export type Candidate = typeof candidates.$inferSelect;
 
+// Communications log
+export const communicationLogs = pgTable("communication_logs", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id),
+  applicationId: integer("application_id").references(() => applications.id),
+  type: text("type").notNull(), // email, call, video, in-person, note
+  subject: text("subject"),
+  message: text("message"),
+  direction: text("direction").default("outbound").notNull(), // inbound or outbound
+  initiatedBy: varchar("initiated_by").references(() => users.id),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  metadata: jsonb("metadata"), // For additional data like call duration, email delivery status, etc.
+});
+
+export const communicationLogsRelations = relations(communicationLogs, ({ one }) => ({
+  candidate: one(candidates, {
+    fields: [communicationLogs.candidateId],
+    references: [candidates.id],
+  }),
+  application: one(applications, {
+    fields: [communicationLogs.applicationId],
+    references: [applications.id],
+  }),
+  initiator: one(users, {
+    fields: [communicationLogs.initiatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const insertCommunicationLogSchema = createInsertSchema(communicationLogs).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertCommunicationLog = z.infer<typeof insertCommunicationLogSchema>;
+export type CommunicationLog = typeof communicationLogs.$inferSelect;
+
 // Applications
 export const applications = pgTable("applications", {
   id: serial("id").primaryKey(),
@@ -175,16 +212,39 @@ export const insertApplicationSchema = createInsertSchema(applications).omit({
 export type InsertApplication = z.infer<typeof insertApplicationSchema>;
 export type Application = typeof applications.$inferSelect;
 
+// Interview type enum
+export const interviewTypeEnum = pgEnum("interview_type", [
+  "in_person", 
+  "phone", 
+  "video", 
+  "assessment",
+  "group"
+]);
+
+// Interview status enum
+export const interviewStatusEnum = pgEnum("interview_status", [
+  "scheduled",
+  "confirmed",
+  "canceled",
+  "completed",
+  "no_show"
+]);
+
 // Interviews
 export const interviews = pgTable("interviews", {
   id: serial("id").primaryKey(),
   applicationId: integer("application_id").notNull().references(() => applications.id),
   scheduledDate: timestamp("scheduled_date").notNull(),
   duration: integer("duration").default(60).notNull(), // in minutes
-  interviewType: text("interview_type").default("in-person").notNull(),
+  interviewType: interviewTypeEnum("interview_type").default("in_person").notNull(),
+  location: text("location"), // Physical location or video conference link
   interviewerId: varchar("interviewer_id").references(() => users.id),
   notes: text("notes"),
-  status: text("status").default("scheduled").notNull(),
+  status: interviewStatusEnum("status").default("scheduled").notNull(),
+  feedback: text("feedback"),
+  videoLink: text("video_link"), // For video interviews: link to join
+  recordingPermission: boolean("recording_permission").default(false), // Consent to record
+  reminderSent: boolean("reminder_sent").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

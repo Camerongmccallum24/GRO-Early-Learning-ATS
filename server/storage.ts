@@ -42,10 +42,17 @@ export interface IStorage {
   updateApplicationStatus(id: number, status: string): Promise<Application>;
   
   // Interview methods
-  getInterviews(): Promise<(Interview & { application?: Application & { candidate?: Candidate } })[]>;
+  getInterviews(filters?: { applicationId?: number, status?: string, type?: string }): Promise<(Interview & { application?: Application & { candidate?: Candidate } })[]>;
   getInterview(id: number): Promise<Interview | undefined>;
   createInterview(interview: InsertInterview): Promise<Interview>;
   updateInterview(id: number, interview: Partial<InsertInterview>): Promise<Interview>;
+  scheduleVideoInterview(applicationId: number, interview: InsertInterview): Promise<Interview>;
+  sendInterviewReminder(interviewId: number): Promise<boolean>;
+  
+  // Communication log methods
+  getCommunicationLogs(candidateId: number): Promise<(CommunicationLog & { candidate?: Candidate })[]>;
+  getApplicationCommunicationLogs(applicationId: number): Promise<(CommunicationLog & { candidate?: Candidate })[]>;
+  createCommunicationLog(log: InsertCommunicationLog): Promise<CommunicationLog>;
   
   // Audit log methods
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
