@@ -44,6 +44,7 @@ export default function Dashboard() {
           value={isStatsLoading ? "..." : stats?.activeJobs || 0}
           icon={<Briefcase className="h-5 w-5 text-white" />}
           iconBgColor="bg-primary"
+          linkTo="/jobs"
         />
         
         <OverviewCard
@@ -51,6 +52,7 @@ export default function Dashboard() {
           value={isStatsLoading ? "..." : stats?.newApplications || 0}
           icon={<UserPlus className="h-5 w-5 text-white" />}
           iconBgColor="bg-secondary"
+          linkTo="/applications"
         />
         
         <OverviewCard
@@ -58,6 +60,7 @@ export default function Dashboard() {
           value={isStatsLoading ? "..." : stats?.interviews || 0}
           icon={<Calendar className="h-5 w-5 text-white" />}
           iconBgColor="bg-blue-400"
+          linkTo="/applications?status=interview"
         />
         
         <OverviewCard
@@ -65,6 +68,7 @@ export default function Dashboard() {
           value={isStatsLoading ? "..." : stats?.filled || 0}
           icon={<Check className="h-5 w-5 text-white" />}
           iconBgColor="bg-[#FF5630]"
+          linkTo="/applications?status=hired"
         />
       </div>
 
@@ -102,7 +106,13 @@ export default function Dashboard() {
                 </tr>
               ) : (
                 recentApplications.map((application: any) => (
-                  <tr key={application.id}>
+                  <tr 
+                    key={application.id} 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => {
+                      window.location.href = `/applications?id=${application.id}`;
+                    }}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
