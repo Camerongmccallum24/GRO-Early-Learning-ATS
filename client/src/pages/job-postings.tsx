@@ -184,9 +184,16 @@ export default function JobPostings() {
                 ) : (
                   jobPostings.map((job: any) => {
                     const status = formatJobStatus(job.status);
-
+                    
                     return (
-                      <tr key={job.id}>
+                      <tr 
+                        key={job.id} 
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => {
+                          // Navigate to job details
+                          window.location.href = `/jobs/edit/${job.id}`;
+                        }}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-[#172B4D]">{job.title}</div>
                         </td>
@@ -207,14 +214,27 @@ export default function JobPostings() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-[#7A869A]">
                           {job.status === "draft" ? "-" : formatDate(job.createdAt)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td 
+                          className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                          onClick={(e) => {
+                            // Prevent click from propagating to the row
+                            e.stopPropagation();
+                          }}
+                        >
                           {job.status === "closed" ? (
                             <>
-                              <Link href={`/jobs/edit/${job.id}`} className="text-primary hover:text-blue-700 mr-3">
+                              <Link 
+                                href={`/jobs/edit/${job.id}`} 
+                                className="text-primary hover:text-blue-700 mr-3"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 View
                               </Link>
                               <button
-                                onClick={() => handleReopenJob(job.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleReopenJob(job.id);
+                                }}
                                 className="text-secondary hover:text-green-700"
                               >
                                 Reopen
@@ -222,11 +242,16 @@ export default function JobPostings() {
                             </>
                           ) : job.status === "draft" ? (
                             <>
-                              <Link href={`/jobs/edit/${job.id}`} className="text-primary hover:text-blue-700 mr-3">
+                              <Link 
+                                href={`/jobs/edit/${job.id}`} 
+                                className="text-primary hover:text-blue-700 mr-3"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 Edit
                               </Link>
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   // For drafts, we'd normally publish instead of close
                                   handleReopenJob(job.id);
                                 }}
@@ -237,11 +262,18 @@ export default function JobPostings() {
                             </>
                           ) : (
                             <>
-                              <Link href={`/jobs/edit/${job.id}`} className="text-primary hover:text-blue-700 mr-3">
+                              <Link 
+                                href={`/jobs/edit/${job.id}`} 
+                                className="text-primary hover:text-blue-700 mr-3"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 Edit
                               </Link>
                               <button
-                                onClick={() => handleCloseJob(job.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCloseJob(job.id);
+                                }}
                                 className="text-[#FF5630] hover:text-red-700"
                               >
                                 Close
