@@ -361,6 +361,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Route for sending custom email to a candidate
+  app.post("/api/applications/:id/send-email", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { subject, message } = req.body;
+      
+      if (!subject || !message) {
+        return res.status(400).json({ message: "Subject and message are required" });
+      }
+      
+      // Get application with candidate details
+      const application = await storage.getApplication(Number(id));
+      
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      if (!application.candidate?.email) {
+        return res.status(400).json({ message: "Candidate email not found" });
+      }
+      
+      // Import the email service
+      const { sendCustomEmail } = await import('./email-service');
+      
+      // Send the custom email
+      const emailSent = await sendCustomEmail(
+        application.candidate.email,
+        subject,
+        message,
+        Number(id)
+      );
+      
+      if (!emailSent) {
+        return res.status(500).json({ message: "Failed to send email" });
+      }
+      
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user?.id,
+        action: "send_custom_email",
+        details: `Sent custom email to candidate for application ID: ${id}`,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      return res.json({ message: "Email sent successfully" });
+    } catch (error) {
+      console.error("Send custom email error:", error);
+      return res.status(500).json({ message: "Error sending custom email" });
+    }
+  });
+  
   app.patch("/api/applications/:id/status", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -376,6 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Application not found" });
       }
       
+      // Update the application status and get the previous status
       const updatedApplication = await storage.updateApplicationStatus(Number(id), status);
       
       // Create audit log
@@ -386,6 +439,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
       });
+      
+      // Import the email service and attempt to send a notification email
+      try {
+        // Get fresh application data with all relationships loaded
+        const fullApplication = await storage.getApplication(Number(id));
+        
+        if (fullApplication && fullApplication.candidate?.email) {
+          const { sendApplicationStatusEmail } = await import('./email-service');
+          
+          // Send status update email
+          await sendApplicationStatusEmail(
+            fullApplication, 
+            updatedApplication.previousStatus || ''
+          );
+          
+          console.log(`Email notification sent for application ${id} status change to ${status}`);
+        }
+      } catch (emailError) {
+        // Log email error but don't fail the API response
+        console.error("Error sending status update email:", emailError);
+      }
       
       return res.json(updatedApplication);
     } catch (error) {
