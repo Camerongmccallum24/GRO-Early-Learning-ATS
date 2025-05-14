@@ -38,6 +38,7 @@ export function formatApplicationStatus(status: string): string {
     applied: 'Applied',
     in_review: 'In Review',
     interview: 'Interview',
+    interviewed: 'Interviewed',
     offered: 'Offered',
     hired: 'Hired',
     rejected: 'Rejected'
@@ -54,6 +55,7 @@ export function getStatusClass(status: string): string {
     applied: 'status-applied',
     in_review: 'status-in-review',
     interview: 'status-interview',
+    interviewed: 'status-interviewed',
     offered: 'status-offered',
     hired: 'status-hired',
     rejected: 'status-rejected'
