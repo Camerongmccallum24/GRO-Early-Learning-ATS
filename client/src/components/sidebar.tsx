@@ -54,12 +54,12 @@ export function Sidebar() {
             {navigation.map((item) => (
               <li key={item.name}>
                 <Link href={item.href}>
-                  <a
+                  <div
                     className={cn(
                       item.active
                         ? "bg-primary text-white"
                         : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
-                      "group flex gap-x-3 rounded-md p-3 text-sm font-semibold"
+                      "group flex gap-x-3 rounded-md p-3 text-sm font-semibold cursor-pointer"
                     )}
                   >
                     <item.icon
@@ -70,7 +70,7 @@ export function Sidebar() {
                       aria-hidden="true"
                     />
                     {item.name}
-                  </a>
+                  </div>
                 </Link>
               </li>
             ))}
