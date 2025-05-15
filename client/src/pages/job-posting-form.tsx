@@ -42,6 +42,9 @@ import ApplicationLinkSection from "@/components/application-link-section";
 // Define the schema for job posting form
 const jobPostingSchema = z.object({
   title: z.string().min(1, "Job title is required"),
+  requisitionId: z.string().optional(),
+  departmentId: z.number().optional(),
+  hiringManagerId: z.string().optional(),
   locationId: z.number({
     required_error: "Location is required",
     invalid_type_error: "Location must be a number",
@@ -49,6 +52,9 @@ const jobPostingSchema = z.object({
   employmentType: z.string({
     required_error: "Employment type is required",
   }),
+  salaryMin: z.number().optional(),
+  salaryMax: z.number().optional(),
+  currency: z.string().default("AUD"),
   salaryRange: z.string().optional(),
   qualifications: z.string().min(1, "Qualifications are required"),
   description: z.string().min(1, "Job description is required"),
@@ -87,8 +93,14 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
     resolver: zodResolver(jobPostingSchema),
     defaultValues: {
       title: "",
+      requisitionId: "",
+      departmentId: undefined,
+      hiringManagerId: "",
       locationId: 0,
       employmentType: "",
+      salaryMin: undefined,
+      salaryMax: undefined,
+      currency: "AUD",
       salaryRange: "",
       qualifications: "",
       description: "",
