@@ -415,6 +415,9 @@ export default function Dashboard() {
           </Button>
         </CardContent>
       </Card>
+      
+      {/* Database Status */}
+      <DatabaseStatus />
     </div>
   );
 }
