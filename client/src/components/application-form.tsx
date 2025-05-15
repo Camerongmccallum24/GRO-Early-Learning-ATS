@@ -1,66 +1,99 @@
+import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { useMutation } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
-import { CandidateProfileForm } from "./candidate-profile-form";
 
-// Define the schema for job application
+// Form schema definition
 const applicationSchema = z.object({
-  jobPostingId: z.number(),
-  candidateId: z.number(),
-  notes: z.string().optional(),
-  source: z.string().default("direct"),
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  phone: z.string().min(8, { message: "Please enter a valid phone number." }),
+  experience: z.string().optional(),
+  education: z.string().optional(),
+  coverLetter: z.string().optional(),
+  dataConsent: z.boolean().refine((val) => val === true, {
+    message: "You must agree to the data processing terms.",
+  }),
 });
 
-type ApplicationFormValues = z.infer<typeof applicationSchema>;
+type ApplicationValues = z.infer<typeof applicationSchema>;
 
 interface ApplicationFormProps {
-  jobPostingId: number;
-  onSuccess?: () => void;
+  jobId: number;
+  jobTitle?: string;
+  onApplicationSubmitted: () => void;
 }
 
-export function ApplicationForm({ jobPostingId, onSuccess }: ApplicationFormProps) {
-  const [candidateId, setCandidateId] = useState<number | null>(null);
+export function ApplicationForm({ jobId, jobTitle, onApplicationSubmitted }: ApplicationFormProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
-  // Fetch job posting details
-  const { data: jobPosting, isLoading: isJobLoading } = useQuery({
-    queryKey: [`/api/job-postings/${jobPostingId}`],
-  });
-
-  const form = useForm<ApplicationFormValues>({
+  const form = useForm<ApplicationValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: {
-      jobPostingId,
-      candidateId: 0,
-      notes: "",
-      source: "direct",
+      name: "",
+      email: "",
+      phone: "",
+      experience: "",
+      education: "",
+      coverLetter: "",
+      dataConsent: false,
     },
   });
 
-  const submitMutation = useMutation({
-    mutationFn: async (values: ApplicationFormValues) => {
-      return apiRequest('POST', '/api/applications', values);
+  const applicationMutation = useMutation({
+    mutationFn: async (values: ApplicationValues) => {
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append("jobPostingId", jobId.toString());
+      formData.append("name", values.name);
+      formData.append("email", values.email);
+      formData.append("phone", values.phone);
+      
+      if (values.experience) formData.append("experience", values.experience);
+      if (values.education) formData.append("education", values.education);
+      if (values.coverLetter) formData.append("coverLetter", values.coverLetter);
+      if (resumeFile) formData.append("resume", resumeFile);
+      
+      // Track application source
+      formData.append("source", "application_link");
+
+      // Send the application
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to submit application");
+      }
+
+      return await response.json();
     },
     onSuccess: () => {
       toast({
         title: "Application submitted successfully",
-        description: "Thank you for your application",
+        description: "Thank you for your application!",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/applications'] });
-      form.reset();
-      if (onSuccess) {
-        onSuccess();
-      }
+      onApplicationSubmitted();
     },
     onError: (error) => {
       toast({
@@ -71,80 +104,175 @@ export function ApplicationForm({ jobPostingId, onSuccess }: ApplicationFormProp
     },
   });
 
-  const onSubmit = (values: ApplicationFormValues) => {
-    submitMutation.mutate(values);
+  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setResumeFile(files[0]);
+    }
   };
 
-  const handleCandidateSuccess = (id: number) => {
-    setCandidateId(id);
-    form.setValue("candidateId", id);
+  const onSubmit = (values: ApplicationValues) => {
+    applicationMutation.mutate(values);
   };
-
-  if (isJobLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex justify-center">
-            <div className="animate-pulse w-full">
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
-              <div className="h-32 bg-gray-200 rounded mb-4"></div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!candidateId) {
-    return <CandidateProfileForm jobId={jobPostingId} onSuccess={handleCandidateSuccess} />;
-  }
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>Apply for {jobPosting?.title}</CardTitle>
-        <CardDescription>
-          Complete your application for this position at {jobPosting?.locationId} location.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Additional Notes</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Add any additional information you'd like us to know about your application"
-                      className="h-32"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="John Smith" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email Address *</FormLabel>
+                <FormControl>
+                  <Input placeholder="john.smith@example.com" type="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number *</FormLabel>
+              <FormControl>
+                <Input placeholder="0412 345 678" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="space-y-4">
+          <div>
+            <FormLabel htmlFor="resume">Resume / CV (PDF, DOC, DOCX)</FormLabel>
+            <Input
+              id="resume"
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleResumeChange}
+              className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
+            <FormDescription>
+              Upload your resume or CV to help us understand your background.
+            </FormDescription>
+          </div>
+        </div>
 
-            <div className="text-sm text-muted-foreground">
-              <p>
-                By submitting this application, you confirm that all information provided is accurate and complete.
-              </p>
-            </div>
+        <FormField
+          control={form.control}
+          name="education"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Education Background</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Share details about your education, degrees, certificates, etc."
+                  className="min-h-24"
+                  {...field}
+                />
+              </FormControl>
+              <FormDescription>
+                Include relevant qualifications for this position.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={submitMutation.isPending}
-            >
-              {submitMutation.isPending ? "Submitting..." : "Submit Application"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        <FormField
+          control={form.control}
+          name="experience"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Work Experience</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Describe your previous work experience, particularly in early childhood education or related fields."
+                  className="min-h-32"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="coverLetter"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cover Letter or Additional Information</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Tell us why you're interested in this position and how your skills align with our requirements."
+                  className="min-h-32"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="dataConsent"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Data Processing Consent *</FormLabel>
+                <FormDescription>
+                  I understand and consent to GRO Early Learning storing and processing my personal information for
+                  recruitment purposes. I acknowledge that I can request access to my data or its deletion at any time.
+                </FormDescription>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={applicationMutation.isPending}
+        >
+          {applicationMutation.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+          ) : (
+            `Submit Application${jobTitle ? ` for ${jobTitle}` : ''}`
+          )}
+        </Button>
+      </form>
+    </Form>
   );
 }

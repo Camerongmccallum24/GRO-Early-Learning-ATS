@@ -15,6 +15,7 @@ import InterviewScheduler from "@/pages/interview-scheduler";
 import Settings from "@/pages/settings";
 import HowToGuides from "@/pages/how-to-guides";
 import Login from "@/pages/login";
+import Apply from "@/pages/apply";
 import { Sidebar } from "@/components/sidebar";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -192,6 +193,10 @@ function Router() {
             </Layout>
           </ProtectedRoute>
         )}
+      </Route>
+
+      <Route path="/apply/:jobId/:hash">
+        {(params) => <Apply />}
       </Route>
       
       <Route component={NotFound} />
