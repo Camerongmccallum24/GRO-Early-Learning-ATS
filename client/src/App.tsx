@@ -35,45 +35,33 @@ function LoadingAuth() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
-    // Check if we have a saved collapsed state, and invert it (since expanded is the opposite of collapsed)
-    const savedCollapsedState = localStorage.getItem('sidebar-collapsed');
-    if (savedCollapsedState !== null) {
-      return savedCollapsedState === 'false'; // if not collapsed, then it's expanded
-    }
-    // Default to not expanded
-    return false;
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const savedState = localStorage.getItem('sidebar-collapsed');
+    return savedState ? savedState === 'false' : true; // Default to expanded if not set
   });
   
   const { user } = useAuth();
   const [location] = useLocation();
   
-  // Save sidebar state when it changes
   useEffect(() => {
-    localStorage.setItem('sidebar-expanded', isSidebarExpanded.toString());
-  }, [isSidebarExpanded]);
-  
-  // Authentication check temporarily disabled
+    localStorage.setItem('sidebar-collapsed', String(!isCollapsed));
+  }, [isCollapsed]);
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Collapsible Sidebar (works for both desktop and mobile) */}
       <Sidebar 
         isMobile={true} 
-        onCollapseChange={(collapsed) => setIsSidebarExpanded(!collapsed)} 
+        onCollapseChange={setIsCollapsed} 
       />
       
-      {/* Main content with responsive margin to accommodate sidebar */}
       <div 
         className={cn(
           "flex flex-col flex-1 overflow-hidden transition-all duration-300",
           "content-with-sidebar",
-          isSidebarExpanded && "content-with-sidebar-expanded"
+          !isCollapsed ? "content-with-sidebar-expanded" : ""
         )}
       >
-        {/* Responsive main content area with better mobile adjustments */}
         <main className="flex-1 overflow-y-auto bg-[#F4F5F7] w-full">
-          {/* Mobile optimized content container with proper spacing */}
           <div className={cn(
             "px-3 pb-6 mx-auto transition-all duration-300",
             "md:pl-24",
@@ -89,7 +77,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  // Authentication check temporarily disabled
+  // Authentication checks temporarily disabled
   return <>{children}</>;
 }
 
