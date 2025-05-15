@@ -31,7 +31,7 @@ interface SidebarProps {
   onCollapseChange?: (collapsed: boolean) => void;
 }
 
-export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
+export default function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
   
