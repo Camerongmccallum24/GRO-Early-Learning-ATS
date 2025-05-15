@@ -27,13 +27,50 @@ export default function Dashboard() {
   // State for the selected stage in the funnel
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
-  // Fetch dashboard stats
-  const { data: stats = {}, isLoading: isLoadingStats } = useQuery({
+  // Define interfaces for the API response types
+  interface DashboardStats {
+    activeJobs: string;
+    newApplications: string;
+    interviews: string;
+    filled: string;
+    applicationsByLocation: Array<{ location: string; count: number }>;
+    applicationsByPosition: Array<{ position: string; count: number }>;
+    [key: string]: any;
+  }
+
+  interface Application {
+    id: number;
+    candidateId: number;
+    jobPostingId: number;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    candidate?: {
+      id: number;
+      name: string;
+      email: string;
+      [key: string]: any;
+    };
+    jobPosting?: {
+      id: number;
+      title: string;
+      location?: {
+        id: number;
+        name: string;
+        [key: string]: any;
+      };
+      [key: string]: any;
+    };
+    [key: string]: any;
+  }
+
+  // Fetch dashboard stats with proper typing
+  const { data: stats = {} as DashboardStats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 
-  // Fetch recent applications
-  const { data: recentApplications = [], isLoading: isLoadingApplications } = useQuery({
+  // Fetch recent applications with proper typing
+  const { data: recentApplications = [] as Application[], isLoading: isLoadingApplications } = useQuery<Application[]>({
     queryKey: ["/api/dashboard/recent-applications"],
   });
 
