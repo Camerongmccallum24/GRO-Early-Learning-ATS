@@ -11,10 +11,6 @@ import {
 import { db } from "./db";
 import { eq, and, desc, asc, like, inArray, isNull, sql } from "drizzle-orm";
 
-// Import in-memory storage for fallback
-import MemStorage from "./utils/mem-storage";
-import { databaseConnected } from "./db";
-
 // Storage interface
 export interface IStorage {
   // User methods
@@ -572,22 +568,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Storage initialization
-let storage: IStorage;
-
-// Initialize storage based on database availability
-export function initStorage() {
-  if (!db || !databaseConnected) {
-    console.log("⚠️ Using memory storage as fallback since database is not available");
-    storage = new MemStorage();
-  } else {
-    console.log("✅ Using database storage");
-    storage = new DatabaseStorage();
-  }
-  return storage;
-}
-
-// Initialize storage immediately
-storage = initStorage();
-
-export { storage };
+export const storage = new DatabaseStorage();

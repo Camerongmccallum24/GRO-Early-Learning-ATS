@@ -14,7 +14,6 @@ interface Request extends ExpressRequest {
 }
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { databaseConnected } from "./db";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -1053,15 +1052,6 @@ Employment Type: ${jobPosting.employmentType}
       console.error("Data deletion request error:", error);
       return res.status(500).json({ message: "Error processing data deletion request" });
     }
-  });
-
-  // System endpoints
-  app.get("/api/system/database-status", async (req: Request, res: Response) => {
-    return res.json({
-      available: databaseConnected,
-      type: databaseConnected ? "postgres" : "memory",
-      timestamp: new Date().toISOString()
-    });
   });
 
   return httpServer;
