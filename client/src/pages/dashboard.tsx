@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +29,9 @@ const STAGE_COLORS = {
 };
 
 export default function Dashboard() {
+  // For navigation with wouter
+  const [, setLocation] = useLocation();
+  
   // State for the selected stage in the funnel
   const [selectedStage, setSelectedStage] = useState<string | null>(null);
 
@@ -71,12 +75,19 @@ export default function Dashboard() {
   // Helper to convert UI stage to DB status for queries
   const getDBStatusFromStage = (stage: string | null): string | undefined => {
     if (!stage) return undefined;
-    return STAGE_TO_DB_STATUS[stage] || undefined;
+    return stage in STAGE_TO_DB_STATUS
+      ? STAGE_TO_DB_STATUS[stage as keyof typeof STAGE_TO_DB_STATUS]
+      : undefined;
   };
 
   // Get the database status value for the selected stage
   const selectedDBStatus = useMemo(() => {
-    return getDBStatusFromStage(selectedStage);
+    if (!selectedStage) return undefined;
+    
+    // Type-safe lookup using the mapping object
+    return selectedStage in STAGE_TO_DB_STATUS 
+      ? STAGE_TO_DB_STATUS[selectedStage as keyof typeof STAGE_TO_DB_STATUS] 
+      : undefined;
   }, [selectedStage]);
 
   // Fetch dashboard stats with proper typing and stage filtering
@@ -259,8 +270,10 @@ export default function Dashboard() {
     const statusLower = status.toLowerCase();
     
     // Use our mapping from stage-context
-    if (statusLower in DB_STATUS_TO_STAGE) {
-      return DB_STATUS_TO_STAGE[statusLower];
+    // Type-safe lookup
+    const validStatuses = Object.keys(DB_STATUS_TO_STAGE);
+    if (validStatuses.includes(statusLower)) {
+      return DB_STATUS_TO_STAGE[statusLower as keyof typeof DB_STATUS_TO_STAGE];
     }
     
     // Default to Applied if no matching status
@@ -378,15 +391,24 @@ export default function Dashboard() {
           <CardTitle className="text-base md:text-lg">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <Button className="w-full justify-between bg-[#e89174] hover:bg-[#d8755b]">
+          <Button 
+            className="w-full justify-between bg-[#e89174] hover:bg-[#d8755b]"
+            onClick={() => setLocation('/job-postings/new')}
+          >
             <span>Post New Job</span>
             <ArrowRightIcon size={16} />
           </Button>
-          <Button className="w-full justify-between bg-[#b1c840] hover:bg-[#9eb33a]">
-            <span>Review Applications</span>
+          <Button 
+            className="w-full justify-between bg-[#b1c840] hover:bg-[#9eb33a]"
+            onClick={() => setLocation('/applications?status=applied')}
+          >
+            <span>Review New Applications</span>
             <ArrowRightIcon size={16} />
           </Button>
-          <Button className="w-full justify-between bg-[#7356ff] hover:bg-[#634ad9]">
+          <Button 
+            className="w-full justify-between bg-[#7356ff] hover:bg-[#634ad9]"
+            onClick={() => setLocation('/interviews/schedule')}
+          >
             <span>Schedule Interviews</span>
             <ArrowRightIcon size={16} />
           </Button>

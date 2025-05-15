@@ -12,7 +12,7 @@ export const RECRUITMENT_STAGES = {
 };
 
 // Map from database status values to our stage names
-export const DB_STATUS_TO_STAGE = {
+export const DB_STATUS_TO_STAGE: Record<string, string> = {
   'applied': RECRUITMENT_STAGES.APPLIED,
   'in_review': RECRUITMENT_STAGES.SCREENING,
   'interview': RECRUITMENT_STAGES.INTERVIEW,

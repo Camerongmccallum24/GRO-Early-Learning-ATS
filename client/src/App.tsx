@@ -9,6 +9,8 @@ import JobPostings from "@/pages/job-postings";
 import JobPostingForm from "@/pages/job-posting-form";
 import Candidates from "@/pages/candidates";
 import Applications from "@/pages/applications";
+import Interviews from "@/pages/interviews";
+import InterviewScheduler from "@/pages/interview-scheduler";
 import Settings from "@/pages/settings";
 import HowToGuides from "@/pages/how-to-guides";
 import Login from "@/pages/login";
