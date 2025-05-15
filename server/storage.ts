@@ -485,11 +485,10 @@ export class DatabaseStorage implements IStorage {
 
   // Video interview methods
   async scheduleVideoInterview(applicationId: number, interview: InsertInterview): Promise<Interview> {
-    // Ensure the interview is of video type
+    // Keep the interview type as provided (video or in_person)
     const interviewData = {
       ...interview,
       applicationId,
-      interviewType: 'video', 
       status: 'scheduled'
     };
     
@@ -506,8 +505,8 @@ export class DatabaseStorage implements IStorage {
       await this.createCommunicationLog({
         candidateId: application.candidateId,
         applicationId,
-        type: 'video_interview',
-        subject: 'Video Interview Scheduled',
+        type: interview.interviewType === 'video' ? 'video_interview' : 'in_person_interview',
+        subject: `${interview.interviewType === 'video' ? 'Video' : 'In-Person'} Interview Scheduled`,
         message: `Video interview scheduled for ${new Date(interview.scheduledDate).toLocaleDateString()} at ${new Date(interview.scheduledDate).toLocaleTimeString()}`,
         direction: 'outbound',
         initiatedBy: interview.interviewerId,

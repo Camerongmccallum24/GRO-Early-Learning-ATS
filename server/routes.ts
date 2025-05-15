@@ -398,6 +398,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Schedule a video interview for an application
+  // Get available time slots for interview scheduling
+  app.get("/api/calendar/available-slots", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const dateParam = req.query.date as string;
+      
+      if (!dateParam) {
+        return res.status(400).json({ message: "Date parameter is required" });
+      }
+      
+      const date = new Date(dateParam);
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ message: "Invalid date format" });
+      }
+      
+      const timeSlots = await getAvailableTimeSlots(date);
+      return res.json(timeSlots);
+    } catch (error) {
+      console.error("Error getting available time slots:", error);
+      return res.status(500).json({ message: "Failed to get available time slots" });
+    }
+  });
+
   app.post("/api/applications/:id/schedule-interview", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -405,9 +427,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         scheduledDate,
         duration,
         interviewType,
-        videoLink,
+        location,
         recordingPermission,
         notes,
+        interviewerEmail,
       } = req.body;
       
       // Basic validation
@@ -420,26 +443,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!application) {
         return res.status(404).json({ message: "Application not found" });
       }
+
+      const isVideoInterview = interviewType === "video";
+      const startDateTime = new Date(scheduledDate);
+      const endDateTime = new Date(startDateTime);
+      endDateTime.setMinutes(endDateTime.getMinutes() + Number(duration));
+      
+      // Create calendar event if the application has a candidate and job posting
+      let eventId = '';
+      let videoLink;
+      
+      if (application.candidate && application.jobPosting) {
+        try {
+          // Create calendar event
+          const calendarResult = await createInterviewEvent({
+            candidateId: application.candidate.id,
+            applicationId: application.id,
+            candidateName: application.candidate.name,
+            candidateEmail: application.candidate.email,
+            interviewerName: req.user?.firstName && req.user?.lastName 
+              ? `${req.user.firstName} ${req.user.lastName}` 
+              : 'HR Admin',
+            interviewerEmail: interviewerEmail || req.user?.email || 'hr-admin@groearlylearning.com',
+            position: application.jobPosting.title,
+            startDateTime,
+            endDateTime,
+            location: location || (isVideoInterview ? undefined : 'GRO Early Learning Office'),
+            isVideoInterview,
+            notes: notes || '',
+          });
+          
+          eventId = calendarResult.eventId;
+          videoLink = calendarResult.videoLink;
+          
+          console.log(`Created calendar event: ${eventId} with video link: ${videoLink || 'N/A'}`);
+        } catch (calendarError) {
+          console.error("Error creating calendar event:", calendarError);
+          // Continue with the interview scheduling even if calendar creation fails
+        }
+      }
       
       // Schedule the interview
       const interview = await storage.scheduleVideoInterview(Number(id), {
         applicationId: Number(id),
-        scheduledDate: new Date(scheduledDate),
+        scheduledDate: startDateTime,
         duration: Number(duration),
         interviewType: interviewType,
         interviewerId: req.user?.id,
-        videoLink: videoLink,
+        videoLink: videoLink || (isVideoInterview ? req.body.videoLink : undefined),
         recordingPermission: recordingPermission,
-        location: "Video Conference", // For video interviews, 'location' is virtual
+        location: isVideoInterview ? "Video Conference" : (location || "GRO Early Learning Office"),
         notes: notes || "",
-        status: "scheduled"
+        status: "scheduled",
+        calendarEventId: eventId || undefined
       });
       
       // Create audit log
       await storage.createAuditLog({
         userId: req.user?.id,
         action: "schedule_interview",
-        details: `Scheduled ${interviewType} interview for application ID: ${id}`,
+        details: `Scheduled ${interviewType} interview for application ID: ${id}${eventId ? ' with calendar event' : ''}`,
         ipAddress: req.ip,
         userAgent: req.headers["user-agent"],
       });
