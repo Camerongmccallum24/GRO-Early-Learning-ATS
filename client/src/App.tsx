@@ -72,9 +72,14 @@ function Layout({ children }: { children: React.ReactNode }) {
         )}
       >
         {/* Responsive main content area with better mobile adjustments */}
-        <main className="flex-1 overflow-y-auto bg-[#F4F5F7] w-full max-w-full">
+        <main className="flex-1 overflow-y-auto bg-[#F4F5F7] w-full">
           {/* Mobile optimized content container with proper spacing */}
-          <div className="px-3 pt-16 pb-6 sm:px-4 md:pt-6 md:px-6 lg:px-8 mx-auto">
+          <div className={cn(
+            "px-3 pb-6 mx-auto transition-all duration-300",
+            "md:pl-24",
+            !isCollapsed ? "md:pl-72" : "",
+            "pt-16 md:pt-6 sm:px-4 md:px-6 lg:px-8"
+          )}>
             {children}
           </div>
         </main>

@@ -108,13 +108,13 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
 
       {/* Sidebar container */}
       <div className={cn(
-        "fixed inset-y-0 z-50 flex flex-col border-r border-gray-200 bg-[#f9f9f9]",
+        "fixed left-0 top-0 h-screen z-50 flex flex-col border-r border-gray-200 bg-[#f9f9f9]",
         "transition-all duration-300 ease-in-out",
-        "max-h-screen overflow-hidden",
-        isCollapsed ? "md:w-20" : "md:w-64",
+        "overflow-y-auto overflow-x-hidden",
+        isCollapsed ? "w-20" : "w-64",
         isSmallScreen ? "w-[280px] shadow-xl" : "",
         (isSmallScreen && !isMobileMenuOpen) ? "-translate-x-full" : "translate-x-0",
-        !isSmallScreen && !isMobileMenuOpen ? "hidden md:flex" : "flex"
+        !isSmallScreen ? "block" : isMobileMenuOpen ? "block" : "hidden"
       )}>
         {/* Header */}
         <div className="flex h-20 shrink-0 items-center border-b border-gray-200 px-4">
