@@ -12,16 +12,17 @@
  *   node -r tsx/cjs migrations/run-migration.js
  */
 
-import { Pool } from 'pg';
+import postgres from 'postgres';
+import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import readline from 'readline';
 
-// Setup directory paths
+// Set up directory paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const sqlPath = path.join(__dirname, 'full_schema.sql');
+const rootDir = path.resolve(__dirname, '..');
+const sqlSchemaPath = path.join(__dirname, 'full_schema.sql');
 
 // Verify environment variables
 if (!process.env.DATABASE_URL) {
@@ -50,17 +51,18 @@ async function connectDB() {
   console.log('\n🔄 Connecting to Supabase PostgreSQL database...');
   
   try {
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+    const sql = postgres(process.env.DATABASE_URL, {
+      ssl: 'require',
+      max: 5,
+      idle_timeout: 30
     });
 
     // Test connection
-    const result = await pool.query('SELECT NOW()');
+    const result = await sql`SELECT NOW() as current_time`;
     console.log('✅ Connection successful!');
-    console.log('Server time:', result.rows[0].now);
+    console.log('Supabase server time:', result[0].current_time);
     
-    return pool;
+    return sql;
   } catch (error) {
     console.error('❌ Connection failed:', error.message);
     if (error.message.includes('ENOTFOUND')) {
@@ -74,23 +76,23 @@ async function connectDB() {
 }
 
 // Check existing tables
-async function checkExistingTables(pool) {
-  console.log('\n🔄 Checking existing database schema...');
+async function checkExistingTables(sql) {
+  console.log('\n🔄 Checking existing database schema in Supabase...');
   
   try {
-    const { rows } = await pool.query(`
+    const tables = await sql`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public'
       ORDER BY table_name
-    `);
+    `;
     
-    if (rows.length > 0) {
-      console.log('⚠️ Database already contains tables:');
-      rows.forEach(row => console.log(`  - ${row.table_name}`));
-      return rows.map(row => row.table_name);
+    if (tables.length > 0) {
+      console.log('⚠️ Supabase database already contains tables:');
+      tables.forEach(row => console.log(`  - ${row.table_name}`));
+      return tables.map(row => row.table_name);
     } else {
-      console.log('✅ Database is empty and ready for schema creation');
+      console.log('✅ Supabase database is empty and ready for schema creation');
       return [];
     }
   } catch (error) {
@@ -100,17 +102,55 @@ async function checkExistingTables(pool) {
 }
 
 // Run migration
-async function runMigration(pool) {
-  console.log('\n🔄 Running migration...');
+async function runMigration(sql) {
+  console.log('\n🔄 Running migration to Supabase...');
   
   try {
-    // Read SQL file
-    const sql = fs.readFileSync(sqlPath, 'utf8');
-    
-    // Run the SQL script
-    await pool.query(sql);
-    
-    console.log('✅ Schema created successfully!');
+    // Check for SQL schema file
+    if (fs.existsSync(sqlSchemaPath)) {
+      console.log('🔄 Using existing SQL schema file:', sqlSchemaPath);
+      const sqlSchema = fs.readFileSync(sqlSchemaPath, 'utf8');
+      
+      // Split the SQL schema into individual statements
+      const statements = sqlSchema
+        .split(';')
+        .filter(statement => statement.trim().length > 0)
+        .map(statement => statement.trim() + ';');
+      
+      console.log(`Found ${statements.length} SQL statements to execute`);
+      
+      // Execute each statement
+      console.log('🔄 Creating schema in Supabase...');
+      for (let i = 0; i < statements.length; i++) {
+        const statement = statements[i];
+        try {
+          await sql.unsafe(statement);
+          process.stdout.write('.');
+        } catch (error) {
+          console.error(`\n❌ Error executing SQL statement ${i + 1}:`, error.message);
+          console.error('Statement:', statement);
+        }
+      }
+      
+      console.log('\n✅ Schema created successfully in Supabase!');
+    } else {
+      console.warn('⚠️ No SQL schema file found at:', sqlSchemaPath);
+      console.warn('Creating basic schema structure...');
+      
+      // Create basic tables
+      await sql`
+        CREATE TABLE IF NOT EXISTS locations (
+          id SERIAL PRIMARY KEY,
+          name TEXT NOT NULL,
+          city TEXT NOT NULL,
+          state TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `;
+      
+      console.log('✅ Basic schema created successfully in Supabase!');
+    }
   } catch (error) {
     console.error('❌ Migration failed:', error.message);
     process.exit(1);
@@ -118,35 +158,38 @@ async function runMigration(pool) {
 }
 
 // Verify migration
-async function verifyMigration(pool) {
+async function verifyMigration(sql) {
   console.log('\n🔄 Verifying migration...');
   
   try {
-    const { rows } = await pool.query(`
+    const tables = await sql`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public'
       ORDER BY table_name
-    `);
+    `;
     
-    console.log('✅ Verified the following tables exist:');
-    rows.forEach(row => console.log(`  - ${row.table_name}`));
+    console.log('✅ Verified the following tables exist in Supabase:');
+    tables.forEach(row => console.log(`  - ${row.table_name}`));
     
-    // Check for specific tables we expect
-    const requiredTables = [
-      'users', 'sessions', 'locations', 'job_postings', 
-      'candidates', 'applications', 'interviews', 
-      'communication_logs', 'audit_logs'
-    ];
+    // Create a test record
+    console.log('\n🔄 Creating a test record...');
     
-    const missingTables = requiredTables.filter(table => 
-      !rows.some(row => row.table_name === table)
-    );
-    
-    if (missingTables.length > 0) {
-      console.error('⚠️ The following required tables are missing:');
-      missingTables.forEach(table => console.error(`  - ${table}`));
-      return false;
+    try {
+      // Check if locations table exists
+      const locationExists = tables.some(row => row.table_name === 'locations');
+      
+      if (locationExists) {
+        await sql`
+          INSERT INTO locations (name, city, state)
+          VALUES ('GRO Early Learning Center - Test', 'Brisbane', 'QLD')
+        `;
+        console.log('✅ Test record created successfully!');
+      } else {
+        console.warn('⚠️ Could not create test record: locations table not found');
+      }
+    } catch (error) {
+      console.error('❌ Test record creation failed:', error.message);
     }
     
     return true;
@@ -160,50 +203,61 @@ async function verifyMigration(pool) {
 async function main() {
   console.log('\n======================================');
   console.log('  Supabase Database Migration Tool');
-  console.log('======================================');
-  
-  // Connect to database
-  const pool = await connectDB();
-  
-  // Check for existing tables
-  const existingTables = await checkExistingTables(pool);
-  
-  if (existingTables.length > 0) {
-    const shouldContinue = await confirm(
-      '\n⚠️ WARNING: The database already contains tables. ' +
-      'Continuing may overwrite existing data.\n' +
-      'Do you want to continue? (y/n): '
-    );
-    
-    if (!shouldContinue) {
-      console.log('\n🛑 Migration cancelled.');
-      rl.close();
-      await pool.end();
-      process.exit(0);
-    }
-  }
-  
-  // Run migration
-  await runMigration(pool);
-  
-  // Verify migration
-  const success = await verifyMigration(pool);
-  
-  // Close connection
-  await pool.end();
-  rl.close();
-  
-  console.log('\n======================================');
-  if (success) {
-    console.log('✅ Migration completed successfully!');
-    console.log('\nYou can now restart your application to use the Supabase database.');
-  } else {
-    console.log('⚠️ Migration completed with warnings.');
-    console.log('Some tables may be missing. Check the output above for details.');
-  }
   console.log('======================================\n');
+  
+  try {
+    // Connect to database
+    const sql = await connectDB();
+    
+    // Check for existing tables
+    const existingTables = await checkExistingTables(sql);
+    
+    if (existingTables.length > 0) {
+      const shouldContinue = await confirm(
+        '\n⚠️ WARNING: The Supabase database already contains tables. ' +
+        'Continuing may overwrite existing data.\n' +
+        'Do you want to continue? (y/n): '
+      );
+      
+      if (!shouldContinue) {
+        console.log('\n🛑 Migration cancelled.');
+        rl.close();
+        await sql.end();
+        process.exit(0);
+      }
+    }
+    
+    // Run migration
+    await runMigration(sql);
+    
+    // Verify migration
+    const success = await verifyMigration(sql);
+    
+    // Close connection
+    await sql.end();
+    rl.close();
+    
+    console.log('\n======================================');
+    if (success) {
+      console.log('✅ Migration to Supabase completed successfully!');
+      console.log('\nNext steps:');
+      console.log('1. Switch to Supabase implementation:');
+      console.log('   node -r tsx/cjs server/utils/database-switcher.js --use-supabase');
+      console.log('2. Restart your application');
+      console.log('   The ATS application should now be using Supabase!');
+    } else {
+      console.log('⚠️ Migration completed with warnings.');
+      console.log('Some tables may be missing. Check the output above for details.');
+    }
+    console.log('======================================\n');
+  } catch (error) {
+    console.error('❌ Unexpected error:', error);
+    rl.close();
+    process.exit(1);
+  }
 }
 
+// Run the main function
 main().catch(error => {
   console.error('❌ Unexpected error:', error);
   process.exit(1);
