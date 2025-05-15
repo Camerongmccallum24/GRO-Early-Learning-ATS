@@ -287,3 +287,37 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
 
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+// Application Links for job applications
+export const applicationLinks = pgTable("application_links", {
+  id: serial("id").primaryKey(),
+  jobPostingId: integer("job_posting_id").notNull().references(() => jobPostings.id),
+  hash: text("hash").notNull().unique(),
+  createdById: varchar("created_by_id").references(() => users.id),
+  expiryDate: timestamp("expiry_date"),
+  isActive: boolean("is_active").default(true).notNull(),
+  clickCount: integer("click_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastClickedAt: timestamp("last_clicked_at"),
+});
+
+export const applicationLinksRelations = relations(applicationLinks, ({ one }) => ({
+  jobPosting: one(jobPostings, {
+    fields: [applicationLinks.jobPostingId],
+    references: [jobPostings.id],
+  }),
+  createdBy: one(users, {
+    fields: [applicationLinks.createdById],
+    references: [users.id],
+  }),
+}));
+
+export const insertApplicationLinkSchema = createInsertSchema(applicationLinks).omit({
+  id: true,
+  clickCount: true,
+  createdAt: true,
+  lastClickedAt: true,
+});
+
+export type InsertApplicationLink = z.infer<typeof insertApplicationLinkSchema>;
+export type ApplicationLink = typeof applicationLinks.$inferSelect;

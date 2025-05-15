@@ -6,6 +6,27 @@ import { storage } from '../storage';
 export async function seedSampleData() {
   console.log("Checking for existing data and seeding if necessary...");
   
+  // Create admin user if it doesn't exist
+  try {
+    const adminUser = await storage.getUser("123456789");
+    if (!adminUser) {
+      console.log("Creating admin user...");
+      await storage.upsertUser({
+        id: "123456789",
+        email: "hr-admin@groearlylearning.com",
+        firstName: "HR",
+        lastName: "Admin",
+        profileImageUrl: "https://ui-avatars.com/api/?name=HR+Admin&background=0052CC&color=fff",
+        role: "hr_admin"
+      });
+      console.log("Admin user created successfully");
+    } else {
+      console.log("Admin user already exists");
+    }
+  } catch (error) {
+    console.error("Error creating admin user:", error);
+  }
+  
   // Check if candidates exist
   const candidates = await storage.getCandidates();
   if (candidates.length === 0) {

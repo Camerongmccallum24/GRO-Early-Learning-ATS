@@ -6,7 +6,8 @@ import {
   locations, type Location, type InsertLocation,
   interviews, type Interview, type InsertInterview,
   communicationLogs, type CommunicationLog, type InsertCommunicationLog,
-  auditLogs, type AuditLog, type InsertAuditLog
+  auditLogs, type AuditLog, type InsertAuditLog,
+  applicationLinks, type ApplicationLink, type InsertApplicationLink
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, inArray, isNull, sql } from "drizzle-orm";
@@ -28,6 +29,13 @@ export interface IStorage {
   createJobPosting(jobPosting: InsertJobPosting): Promise<JobPosting>;
   updateJobPosting(id: number, jobPosting: Partial<InsertJobPosting>): Promise<JobPosting>;
   deleteJobPosting(id: number): Promise<boolean>;
+  
+  // Application Links methods
+  getApplicationLinks(jobPostingId: number): Promise<ApplicationLink[]>;
+  getApplicationLink(id: number): Promise<ApplicationLink | undefined>;
+  getApplicationLinkByHash(hash: string): Promise<ApplicationLink | undefined>;
+  createApplicationLink(link: InsertApplicationLink): Promise<ApplicationLink>;
+  incrementApplicationLinkClickCount(id: number): Promise<ApplicationLink>;
   
   // Candidate methods
   getCandidates(): Promise<Candidate[]>;
