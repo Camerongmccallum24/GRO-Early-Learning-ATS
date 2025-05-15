@@ -1055,5 +1055,14 @@ Employment Type: ${jobPosting.employmentType}
     }
   });
 
+  // System endpoints
+  app.get("/api/system/database-status", async (req: Request, res: Response) => {
+    return res.json({
+      available: databaseConnected,
+      type: databaseConnected ? "postgres" : "memory",
+      timestamp: new Date().toISOString()
+    });
+  });
+
   return httpServer;
 }

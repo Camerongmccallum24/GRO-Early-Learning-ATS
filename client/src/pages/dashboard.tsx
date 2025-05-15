@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRightIcon, InfoIcon } from "lucide-react";
+import DatabaseStatus from "@/components/database-status";
 
 // Import our new funnel dashboard components
 import { HiringFunnel, type FunnelStage } from "@/components/dashboard/funnel-chart";
