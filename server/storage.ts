@@ -327,7 +327,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Dashboard methods
-  async getDashboardStats(): Promise<{
+  async getDashboardStats(filters?: { status?: string }): Promise<{
     activeJobs: number;
     newApplications: number;
     interviews: number;
@@ -369,26 +369,40 @@ export class DatabaseStorage implements IStorage {
       .from(applications)
       .where(eq(applications.status, 'hired'));
     
-    // Get applications by location
-    const applicationsByLocation = await db
+    // Get applications by location with status filter
+    let locationQuery = db
       .select({
         location: locations.name,
         count: sql<number>`count(*)`,
       })
       .from(applications)
       .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id))
-      .leftJoin(locations, eq(jobPostings.locationId, locations.id))
+      .leftJoin(locations, eq(jobPostings.locationId, locations.id));
+    
+    // Apply status filter if provided
+    if (filters?.status) {
+      locationQuery = locationQuery.where(eq(applications.status, filters.status));
+    }
+    
+    const applicationsByLocation = await locationQuery
       .groupBy(locations.name)
       .orderBy(desc(sql<number>`count(*)`));
     
-    // Get applications by position/job title
-    const applicationsByPosition = await db
+    // Get applications by position/job title with status filter
+    let positionQuery = db
       .select({
         position: jobPostings.title,
         count: sql<number>`count(*)`,
       })
       .from(applications)
-      .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id))
+      .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id));
+    
+    // Apply status filter if provided
+    if (filters?.status) {
+      positionQuery = positionQuery.where(eq(applications.status, filters.status));
+    }
+    
+    const applicationsByPosition = await positionQuery
       .groupBy(jobPostings.title)
       .orderBy(desc(sql<number>`count(*)`))
       .limit(5);
@@ -407,8 +421,9 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getRecentApplications(limit: number = 5): Promise<(Application & { candidate?: Candidate, jobPosting?: JobPosting & { location?: Location } })[]> {
-    return await db
+  async getRecentApplications(limit: number = 5, filters?: { status?: string }): Promise<(Application & { candidate?: Candidate, jobPosting?: JobPosting & { location?: Location } })[]> {
+    // Start building the query
+    let query = db
       .select({
         ...applications,
         candidate: candidates,
@@ -420,7 +435,15 @@ export class DatabaseStorage implements IStorage {
       .from(applications)
       .leftJoin(candidates, eq(applications.candidateId, candidates.id))
       .leftJoin(jobPostings, eq(applications.jobPostingId, jobPostings.id))
-      .leftJoin(locations, eq(jobPostings.locationId, locations.id))
+      .leftJoin(locations, eq(jobPostings.locationId, locations.id));
+    
+    // Apply status filter if provided
+    if (filters?.status) {
+      query = query.where(eq(applications.status, filters.status));
+    }
+    
+    // Complete the query with ordering and limit
+    return await query
       .orderBy(desc(applications.applicationDate))
       .limit(limit);
   }

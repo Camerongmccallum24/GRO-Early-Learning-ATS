@@ -81,12 +81,30 @@ export default function Dashboard() {
 
   // Fetch dashboard stats with proper typing and stage filtering
   const { data: stats = {} as DashboardStats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats", selectedDBStatus ? { status: selectedDBStatus } : undefined].filter(Boolean),
+    queryKey: ["/api/dashboard/stats", selectedDBStatus ? "status=" + selectedDBStatus : ""],
+    queryFn: async ({ queryKey }) => {
+      // Get the URL with optional status parameter
+      const url = `${queryKey[0]}${queryKey[1] ? `?${queryKey[1]}` : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    }
   });
 
   // Fetch recent applications with proper typing and stage filtering
   const { data: recentApplications = [] as Application[], isLoading: isLoadingApplications } = useQuery<Application[]>({
-    queryKey: ["/api/dashboard/recent-applications", selectedDBStatus ? { status: selectedDBStatus } : undefined].filter(Boolean),
+    queryKey: ["/api/dashboard/recent-applications", selectedDBStatus ? "status=" + selectedDBStatus : ""],
+    queryFn: async ({ queryKey }) => {
+      // Get the URL with optional status parameter
+      const url = `${queryKey[0]}${queryKey[1] ? `?${queryKey[1]}` : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    }
   });
 
   // Create funnel data from stats
