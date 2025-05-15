@@ -574,6 +574,74 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Application Links methods
+  async getApplicationLinks(jobPostingId: number): Promise<ApplicationLink[]> {
+    try {
+      return await db.select().from(applicationLinks)
+        .where(eq(applicationLinks.jobPostingId, jobPostingId))
+        .orderBy(desc(applicationLinks.createdAt));
+    } catch (error) {
+      console.error('Error getting application links:', error);
+      return [];
+    }
+  }
+
+  async getApplicationLink(id: number): Promise<ApplicationLink | undefined> {
+    try {
+      const result = await db.select().from(applicationLinks)
+        .where(eq(applicationLinks.id, id))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error getting application link:', error);
+      return undefined;
+    }
+  }
+
+  async getApplicationLinkByHash(hash: string): Promise<ApplicationLink | undefined> {
+    try {
+      const result = await db.select().from(applicationLinks)
+        .where(eq(applicationLinks.hash, hash))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error getting application link by hash:', error);
+      return undefined;
+    }
+  }
+
+  async createApplicationLink(link: InsertApplicationLink): Promise<ApplicationLink> {
+    try {
+      const result = await db.insert(applicationLinks).values(link).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating application link:', error);
+      throw error;
+    }
+  }
+
+  async incrementApplicationLinkClickCount(id: number): Promise<ApplicationLink> {
+    try {
+      const link = await this.getApplicationLink(id);
+      if (!link) {
+        throw new Error(`Application link with ID ${id} not found`);
+      }
+
+      const result = await db.update(applicationLinks)
+        .set({ 
+          clickCount: link.clickCount + 1,
+          lastClickedAt: new Date()
+        })
+        .where(eq(applicationLinks.id, id))
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error incrementing application link click count:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

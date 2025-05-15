@@ -91,27 +91,18 @@ export async function seedSampleData() {
     const sampleLocations = [
       {
         name: "GRO Early Learning Center - Brisbane CBD",
-        address: "123 Queen Street, Brisbane QLD 4000",
-        phone: "07 3123 4567",
-        capacity: 80,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        city: "Brisbane",
+        state: "QLD"
       },
       {
         name: "GRO Early Learning Center - Sunshine Coast",
-        address: "45 Beach Road, Maroochydore QLD 4558",
-        phone: "07 5432 1098",
-        capacity: 65,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        city: "Maroochydore",
+        state: "QLD"
       },
       {
         name: "GRO Early Learning Center - Gold Coast",
-        address: "78 Marine Parade, Southport QLD 4215",
-        phone: "07 5678 9012",
-        capacity: 70,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        city: "Southport",
+        state: "QLD"
       }
     ];
     

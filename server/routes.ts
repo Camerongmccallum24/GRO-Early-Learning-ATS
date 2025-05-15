@@ -254,6 +254,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Application Link routes
+  app.post("/api/job-postings/:id/application-links", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const jobId = Number(id);
+      
+      // Validate job posting exists
+      const jobPosting = await storage.getJobPosting(jobId);
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Import the utility function to generate hash
+      const { generateApplicationLinkHash } = await import('./utils/application-links');
+      
+      // Create new application link
+      const hash = generateApplicationLinkHash(jobId);
+      const applicationLink = await storage.createApplicationLink({
+        jobPostingId: jobId,
+        hash,
+        createdById: req.user?.id,
+        isActive: true,
+        // Set expiry date to 30 days from now if needed
+        expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      });
+      
+      // Create audit log
+      await storage.createAuditLog({
+        userId: req.user?.id,
+        action: "create_application_link",
+        details: `Created application link for job posting ID: ${jobId}`,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      // Generate full URL for the application link
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const applicationUrl = `${baseUrl}/apply/${jobId}/${hash}`;
+      
+      return res.status(201).json({ 
+        ...applicationLink, 
+        applicationUrl 
+      });
+    } catch (error) {
+      console.error("Create application link error:", error);
+      return res.status(500).json({ message: "Error creating application link" });
+    }
+  });
+  
+  app.get("/api/job-postings/:id/application-links", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const jobId = Number(id);
+      
+      // Validate job posting exists
+      const jobPosting = await storage.getJobPosting(jobId);
+      if (!jobPosting) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      const applicationLinks = await storage.getApplicationLinks(jobId);
+      
+      // Add full URLs to each application link
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const linksWithUrls = applicationLinks.map(link => ({
+        ...link,
+        applicationUrl: `${baseUrl}/apply/${jobId}/${link.hash}`
+      }));
+      
+      return res.json(linksWithUrls);
+    } catch (error) {
+      console.error("Get application links error:", error);
+      return res.status(500).json({ message: "Error fetching application links" });
+    }
+  });
+  
+  app.get("/api/application-links/validate/:jobId/:hash", async (req: Request, res: Response) => {
+    try {
+      const { jobId, hash } = req.params;
+      const jobPostingId = Number(jobId);
+      
+      // Validate job posting exists and is active
+      const jobPosting = await storage.getJobPosting(jobPostingId);
+      if (!jobPosting || jobPosting.status !== 'active') {
+        return res.status(404).json({ 
+          valid: false, 
+          message: "Job posting not found or no longer active" 
+        });
+      }
+      
+      // Validate application link exists and is active
+      const link = await storage.getApplicationLinkByHash(hash);
+      if (!link || !link.isActive) {
+        return res.status(404).json({ 
+          valid: false, 
+          message: "Application link not found or inactive" 
+        });
+      }
+      
+      // Check if link has expired
+      if (link.expiryDate && new Date(link.expiryDate) < new Date()) {
+        return res.status(400).json({ 
+          valid: false, 
+          message: "Application link has expired" 
+        });
+      }
+      
+      // Increment click count
+      await storage.incrementApplicationLinkClickCount(link.id);
+      
+      return res.json({ 
+        valid: true, 
+        jobPosting
+      });
+    } catch (error) {
+      console.error("Validate application link error:", error);
+      return res.status(500).json({ 
+        valid: false, 
+        message: "Error validating application link" 
+      });
+    }
+  });
+  
   // Candidate and application routes
   
   // Get all candidates
