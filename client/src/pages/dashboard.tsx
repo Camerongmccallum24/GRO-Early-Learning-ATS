@@ -393,7 +393,7 @@ export default function Dashboard() {
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           <Button 
             className="w-full justify-between bg-[#e89174] hover:bg-[#d8755b]"
-            onClick={() => setLocation('/job-postings/new')}
+            onClick={() => setLocation('/jobs/new')}
           >
             <span>Post New Job</span>
             <ArrowRightIcon size={16} />

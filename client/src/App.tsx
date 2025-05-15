@@ -152,6 +152,26 @@ function Router() {
           </ProtectedRoute>
         )}
       </Route>
+      
+      <Route path="/interviews">
+        {() => (
+          <ProtectedRoute>
+            <Layout>
+              <Interviews />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      </Route>
+      
+      <Route path="/interviews/schedule">
+        {() => (
+          <ProtectedRoute>
+            <Layout>
+              <InterviewScheduler />
+            </Layout>
+          </ProtectedRoute>
+        )}
+      </Route>
 
       <Route path="/guides">
         {() => (
