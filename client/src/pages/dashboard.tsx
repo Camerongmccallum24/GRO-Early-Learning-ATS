@@ -220,6 +220,27 @@ export default function Dashboard() {
     }
   }, [stats]);
 
+  // Map database status to our funnel stages
+  const mapStatusToStage = (status: string): string => {
+    // Convert database status to proper stage name
+    const statusMap: Record<string, string> = {
+      "applied": RECRUITMENT_STAGES.APPLIED,
+      "screening": RECRUITMENT_STAGES.SCREENING,
+      "interview": RECRUITMENT_STAGES.INTERVIEW,
+      "offered": RECRUITMENT_STAGES.OFFER,
+      "hired": RECRUITMENT_STAGES.HIRED,
+      "rejected": RECRUITMENT_STAGES.REJECTED,
+    };
+    
+    // Check if we have a direct mapping
+    if (status.toLowerCase() in statusMap) {
+      return statusMap[status.toLowerCase()];
+    }
+    
+    // Default to Applied if no matching status
+    return RECRUITMENT_STAGES.APPLIED;
+  };
+
   // Format applications for the table
   const applications: ApplicationRowData[] = useMemo(() => {
     if (!recentApplications.length) {
@@ -230,8 +251,8 @@ export default function Dashboard() {
       id: app.id,
       candidateName: app.candidate?.name || "Unknown Candidate",
       position: app.jobPosting?.title || "Unknown Position",
-      stage: app.status || "Applied",
-      date: app.createdAt,
+      stage: mapStatusToStage(app.status || "applied"),
+      date: app.application_date || app.createdAt,
       location: app.jobPosting?.location?.name
     }));
   }, [recentApplications]);

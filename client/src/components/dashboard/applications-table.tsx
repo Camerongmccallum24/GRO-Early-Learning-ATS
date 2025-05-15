@@ -38,7 +38,10 @@ export function ApplicationsTable({
   // Filter by stage if selected and display only up to maxItems
   const tableData = useMemo(() => {
     let filteredData = selectedStage
-      ? data.filter((app) => app.stage === selectedStage)
+      ? data.filter((app) => {
+          // Case-insensitive comparison to handle potential casing differences
+          return app.stage.toLowerCase() === selectedStage.toLowerCase();
+        })
       : data;
 
     return filteredData.slice(0, maxItems);
