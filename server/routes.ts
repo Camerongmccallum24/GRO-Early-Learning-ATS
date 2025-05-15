@@ -21,6 +21,13 @@ import { parseResume } from "./resume-parser";
 import { z } from "zod";
 import { upsertUserSchema, insertJobPostingSchema, insertCandidateSchema, insertApplicationSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated, getUser } from "./simpleReplitAuth";
+import {
+  getAvailableTimeSlots,
+  createInterviewEvent,
+  updateInterviewEvent,
+  cancelInterview,
+  getInterviewEvent
+} from './calendar-service';
 
 // Define upload directory and setup multer
 const uploadDir = path.join(process.cwd(), "uploads");

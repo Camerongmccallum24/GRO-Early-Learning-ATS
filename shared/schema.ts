@@ -244,6 +244,7 @@ export const interviews = pgTable("interviews", {
   status: text("status").default("scheduled").notNull(), // Changed to text type for now
   feedback: text("feedback"),
   videoLink: text("video_link"), // For video interviews: link to join
+  calendarEventId: text("calendar_event_id"), // Google Calendar event ID
   recordingPermission: boolean("recording_permission").default(false), // Consent to record
   reminderSent: boolean("reminder_sent").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
