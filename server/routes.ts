@@ -397,6 +397,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Interview routes
+  app.get("/api/interviews", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const interviews = await storage.getInterviews();
+      return res.json(interviews);
+    } catch (error) {
+      console.error("Error fetching interviews:", error);
+      return res.status(500).json({ message: "Failed to fetch interviews" });
+    }
+  });
+
+  app.get("/api/interviews/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const interviewId = parseInt(req.params.id);
+      const interview = await storage.getInterview(interviewId);
+      
+      if (!interview) {
+        return res.status(404).json({ message: "Interview not found" });
+      }
+      
+      return res.json(interview);
+    } catch (error) {
+      console.error("Error fetching interview:", error);
+      return res.status(500).json({ message: "Failed to fetch interview" });
+    }
+  });
+  
   // Schedule a video interview for an application
   // Get available time slots for interview scheduling
   app.get("/api/calendar/available-slots", isAuthenticated, async (req: Request, res: Response) => {
