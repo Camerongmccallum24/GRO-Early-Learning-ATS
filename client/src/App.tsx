@@ -14,7 +14,7 @@ import InterviewScheduler from "@/pages/interview-scheduler";
 import Settings from "@/pages/settings";
 import HowToGuides from "@/pages/how-to-guides";
 import Login from "@/pages/login";
-import { Sidebar } from "@/components/sidebar";
+import Sidebar from "@/components/sidebar";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
