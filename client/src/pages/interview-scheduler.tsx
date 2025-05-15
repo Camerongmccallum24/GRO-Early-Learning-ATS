@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // Using user data directly from API
 // import { useAuth } from '@/hooks/use-auth';
 import { queryClient } from '@/lib/queryClient';
-import Sidebar from '@/components/sidebar';
+import { Sidebar } from '@/components/sidebar';
 import PageHeader from '@/components/page-header';
 
 const InterviewScheduler = () => {

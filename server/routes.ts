@@ -67,6 +67,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up Replit Auth
   await setupAuth(app);
+  
+  // Database status endpoint
+  app.get("/api/system/database-status", async (req: Request, res: Response) => {
+    const { isDatabaseConnected } = await import('./db');
+    const isConnected = isDatabaseConnected();
+    
+    return res.json({
+      available: isConnected,
+      type: isConnected ? "postgresql" : "memory"
+    });
+  });
 
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {

@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Calendar, Video, Users, CalendarClock, Plus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Sidebar from '@/components/sidebar';
+import { Sidebar } from '@/components/sidebar';
 import PageHeader from '@/components/page-header';
 
 const Interviews = () => {
