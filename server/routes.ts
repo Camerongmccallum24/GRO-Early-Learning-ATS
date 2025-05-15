@@ -629,7 +629,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard routes
   app.get("/api/dashboard/stats", isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const stats = await storage.getDashboardStats();
+      // Check for status filter in query param
+      const statusFilter = req.query.status as string;
+      const stats = await storage.getDashboardStats(statusFilter ? { status: statusFilter } : undefined);
       return res.json(stats);
     } catch (error) {
       console.error("Get dashboard stats error:", error);
@@ -640,7 +642,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/recent-applications", isAuthenticated, async (req: Request, res: Response) => {
     try {
       const limit = req.query.limit ? Number(req.query.limit) : 5;
-      const applications = await storage.getRecentApplications(limit);
+      const statusFilter = req.query.status as string;
+
+      // Apply status filter if provided
+      const filters = statusFilter ? { status: statusFilter } : undefined;
+      const applications = await storage.getRecentApplications(limit, filters);
+      
       return res.json(applications);
     } catch (error) {
       console.error("Get recent applications error:", error);

@@ -4,11 +4,32 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 export const RECRUITMENT_STAGES = {
   POSTED: 'Posted',
   APPLIED: 'Applied',
-  SCREENING: 'Screening',
-  INTERVIEW: 'Interview',
-  OFFER: 'Offer',
-  HIRED: 'Hired',
-  REJECTED: 'Rejected',
+  SCREENING: 'Screening', // Maps to 'in_review' in database
+  INTERVIEW: 'Interview', // Maps to 'interview' in database
+  OFFER: 'Offer',      // Maps to 'offered' in database
+  HIRED: 'Hired',      // Maps to 'hired' in database
+  REJECTED: 'Rejected', // Maps to 'rejected' in database
+};
+
+// Map from database status values to our stage names
+export const DB_STATUS_TO_STAGE = {
+  'applied': RECRUITMENT_STAGES.APPLIED,
+  'in_review': RECRUITMENT_STAGES.SCREENING,
+  'interview': RECRUITMENT_STAGES.INTERVIEW,
+  'interviewed': RECRUITMENT_STAGES.INTERVIEW, // Consider both as Interview
+  'offered': RECRUITMENT_STAGES.OFFER,
+  'hired': RECRUITMENT_STAGES.HIRED,
+  'rejected': RECRUITMENT_STAGES.REJECTED,
+};
+
+// Map from our stage names to database status values
+export const STAGE_TO_DB_STATUS = {
+  [RECRUITMENT_STAGES.APPLIED]: 'applied',
+  [RECRUITMENT_STAGES.SCREENING]: 'in_review',
+  [RECRUITMENT_STAGES.INTERVIEW]: 'interview',
+  [RECRUITMENT_STAGES.OFFER]: 'offered',
+  [RECRUITMENT_STAGES.HIRED]: 'hired',
+  [RECRUITMENT_STAGES.REJECTED]: 'rejected',
 };
 
 // Define the context type

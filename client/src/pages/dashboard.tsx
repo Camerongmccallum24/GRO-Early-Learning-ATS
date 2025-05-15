@@ -10,7 +10,11 @@ import { HiringFunnel, type FunnelStage } from "@/components/dashboard/funnel-ch
 import { StageMetrics, type StageMetric } from "@/components/dashboard/stage-metrics";
 import { ApplicationsByCategory, type CategoryData } from "@/components/dashboard/applications-by-category";
 import { ApplicationsTable, type ApplicationRowData } from "@/components/dashboard/applications-table";
-import { RECRUITMENT_STAGES } from "@/components/dashboard/stage-context";
+import { 
+  RECRUITMENT_STAGES, 
+  DB_STATUS_TO_STAGE, 
+  STAGE_TO_DB_STATUS 
+} from "@/components/dashboard/stage-context";
 
 // Custom colors for our stages
 const STAGE_COLORS = {
@@ -64,14 +68,25 @@ export default function Dashboard() {
     [key: string]: any;
   }
 
-  // Fetch dashboard stats with proper typing
+  // Helper to convert UI stage to DB status for queries
+  const getDBStatusFromStage = (stage: string | null): string | undefined => {
+    if (!stage) return undefined;
+    return STAGE_TO_DB_STATUS[stage] || undefined;
+  };
+
+  // Get the database status value for the selected stage
+  const selectedDBStatus = useMemo(() => {
+    return getDBStatusFromStage(selectedStage);
+  }, [selectedStage]);
+
+  // Fetch dashboard stats with proper typing and stage filtering
   const { data: stats = {} as DashboardStats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
-    queryKey: ["/api/dashboard/stats"],
+    queryKey: ["/api/dashboard/stats", selectedDBStatus ? { status: selectedDBStatus } : undefined].filter(Boolean),
   });
 
-  // Fetch recent applications with proper typing
+  // Fetch recent applications with proper typing and stage filtering
   const { data: recentApplications = [] as Application[], isLoading: isLoadingApplications } = useQuery<Application[]>({
-    queryKey: ["/api/dashboard/recent-applications"],
+    queryKey: ["/api/dashboard/recent-applications", selectedDBStatus ? { status: selectedDBStatus } : undefined].filter(Boolean),
   });
 
   // Create funnel data from stats
@@ -220,21 +235,14 @@ export default function Dashboard() {
     }
   }, [stats]);
 
-  // Map database status to our funnel stages
+  // Map database status to our funnel stages using the imported mapping
   const mapStatusToStage = (status: string): string => {
-    // Convert database status to proper stage name
-    const statusMap: Record<string, string> = {
-      "applied": RECRUITMENT_STAGES.APPLIED,
-      "screening": RECRUITMENT_STAGES.SCREENING,
-      "interview": RECRUITMENT_STAGES.INTERVIEW,
-      "offered": RECRUITMENT_STAGES.OFFER,
-      "hired": RECRUITMENT_STAGES.HIRED,
-      "rejected": RECRUITMENT_STAGES.REJECTED,
-    };
+    // Convert to lowercase for case-insensitive comparison
+    const statusLower = status.toLowerCase();
     
-    // Check if we have a direct mapping
-    if (status.toLowerCase() in statusMap) {
-      return statusMap[status.toLowerCase()];
+    // Use our mapping from stage-context
+    if (statusLower in DB_STATUS_TO_STAGE) {
+      return DB_STATUS_TO_STAGE[statusLower];
     }
     
     // Default to Applied if no matching status
