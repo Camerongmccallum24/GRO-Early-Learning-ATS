@@ -1,0 +1,87 @@
+**Agent Migration Playbook**
+
+**Goal:**
+Instruct the Replit Agent to stop using the built-in Replit DB and provision and migrate your schema on Supabase using the existing `DATABASE_URL` (service\_role) secret.
+
+---
+
+**Agent Task Instruction**
+
+> Please execute the following sequence of commands and modifications in the Replit workspace to switch the database backend to Supabase:
+
+1. **Verify Secret**
+
+   * Confirm that the Supabase service\_role URL is stored under the secret key `DATABASE_URL`.
+
+2. **Install Drizzle CLI**
+
+   ```bash
+   npm install --save-dev drizzle-kit
+   ```
+
+3. **Configure Drizzle Scripts**
+
+   * In `package.json`, add two new scripts under the `scripts` section:
+
+     ```jsonc
+     {
+       "scripts": {
+         // existing scripts...
+         "drizzle:generate": "drizzle-kit generate --schema src/db/schema.ts --out migrations",
+         "drizzle:migrate":  "drizzle-kit migrate up"
+       }
+     }
+     ```
+
+4. **Generate Migration**
+
+   ```bash
+   npm run drizzle:generate
+   ```
+
+   * This will compare your `schema.ts` to the empty Supabase DB and create SQL files in `migrations/`.
+
+5. **Run Migrations**
+
+   ```bash
+   npm run drizzle:migrate
+   ```
+
+   * Applies all pending migrations to Supabase via `process.env.DATABASE_URL`.
+
+6. **Switch DB Client in Code**
+
+   * Replace any Replit DB client imports with the following setup in `src/db/index.ts`:
+
+     ```ts
+     import pg from "postgres";
+     import { drizzle } from "drizzle-orm/postgres-js";
+
+     const sql = pg(process.env.DATABASE_URL!);
+     export const db = drizzle(sql);
+     ```
+
+7. **Remove Replit-DB Code**
+
+   * Uninstall or delete any Replit DB/KV packages and related imports.
+   * Remove any environment variables or config tied to the old DB.
+
+8. **Smoke-Test Flows**
+
+   * Execute test scripts or run the app to validate:
+
+     ```bash
+     node scripts/createTestUser.js
+     node scripts/createTestJob.js
+     node scripts/createTestApplication.js
+     ```
+   * Confirm records appear in the Supabase Table Editor.
+
+9. **Commit & Deploy**
+
+   * Commit the `migrations/` folder, updated `package.json`, and `src/db/index.ts`.
+   * Deploy your Replit app; it will now use Supabase as its database backend.
+
+---
+
+**Once these steps are complete**, the Replit Agent will have fully switched your workspace from the built-in database to Supabase Postgres, driven entirely by Drizzle migrations and your existing secret.
