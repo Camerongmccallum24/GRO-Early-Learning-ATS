@@ -37,6 +37,7 @@ import {
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import JobTemplates from "@/components/job-templates";
+import ApplicationLinkSection from "@/components/application-link-section";
 
 // Define the schema for job posting form
 const jobPostingSchema = z.object({
@@ -472,6 +473,16 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
                   )}
                 />
               </div>
+
+              {isEditMode && existingJob && existingJob.status === "active" && (
+                <div className="border-t border-gray-200 pt-4 mt-6">
+                  <h3 className="text-lg font-medium mb-2">Application Links</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Generate links for candidates to apply for this position. These links can be shared via email, social media, or job boards.
+                  </p>
+                  <ApplicationLinkSection jobId={Number(id)} />
+                </div>
+              )}
 
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                 <Button
