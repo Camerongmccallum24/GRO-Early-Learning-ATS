@@ -14,6 +14,7 @@ interface Request extends ExpressRequest {
 }
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { databaseConnected } from "./db";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
