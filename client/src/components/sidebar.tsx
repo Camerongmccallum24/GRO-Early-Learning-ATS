@@ -108,10 +108,10 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
 
       {/* Sidebar container */}
       <div className={cn(
-        "group/sidebar-wrapper flex min-h-screen bg-sidebar fixed left-0 top-0 z-40",
+        "fixed inset-y-0 z-50 flex flex-col border-r border-gray-200 bg-[#f9f9f9]",
         "transition-all duration-300 ease-in-out",
-        isCollapsed ? "w-20" : "w-64",
-        
+        "max-h-screen overflow-hidden",
+        isCollapsed ? "md:w-20" : "md:w-64",
         isSmallScreen ? "w-[280px] shadow-xl" : "",
         (isSmallScreen && !isMobileMenuOpen) ? "-translate-x-full" : "translate-x-0",
         !isSmallScreen && !isMobileMenuOpen ? "hidden md:flex" : "flex"

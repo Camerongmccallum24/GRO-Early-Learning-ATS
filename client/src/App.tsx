@@ -67,8 +67,8 @@ function Layout({ children }: { children: React.ReactNode }) {
       <div 
         className={cn(
           "flex flex-col flex-1 overflow-hidden transition-all duration-300",
-          "ml-20 md:ml-64",
-          !isSidebarExpanded && "md:ml-20"
+          "content-with-sidebar",
+          isSidebarExpanded && "content-with-sidebar-expanded"
         )}
       >
         {/* Responsive main content area with better mobile adjustments */}
