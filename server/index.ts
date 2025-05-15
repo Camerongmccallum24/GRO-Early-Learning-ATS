@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedSampleData } from "./utils/seed-data";
+import { initDatabaseConnection } from "./db";
+import { initStorage } from "./storage";
 
 // Set up development environment variables
 if (process.env.NODE_ENV === "development") {
@@ -45,6 +47,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize database connection before starting the server
+  const { databaseConnected } = await initDatabaseConnection();
+  console.log(`Database status before server start: ${databaseConnected ? 'Connected' : 'Not connected'}`);
+  
+  // Reinitialize storage after database connection is established
+  initStorage();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -7,12 +7,19 @@ let pool = null;
 let db = null;
 let databaseConnected = false;
 
-// Check if we have a DATABASE_URL
-if (!process.env.DATABASE_URL) {
-  console.warn("DATABASE_URL is not set. Using in-memory database for development.");
-} else {
+// Function to initialize database connection
+export async function initDatabaseConnection() {
+  // Skip if already connected
+  if (databaseConnected) return { pool, db, databaseConnected };
+  
+  // Check if we have a DATABASE_URL
+  if (!process.env.DATABASE_URL) {
+    console.warn("DATABASE_URL is not set. Using in-memory database for development.");
+    return { pool, db, databaseConnected: false };
+  }
+  
   try {
-    // Set up a pool with no immediate connection
+    // Set up a pool with proper connection settings
     pool = new Pool({ 
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }, // Required for Supabase connection
@@ -29,19 +36,17 @@ if (!process.env.DATABASE_URL) {
     // Initialize Drizzle with the pool and schema
     db = drizzle(pool, { schema });
     
-    // Test the connection, but don't block startup
-    (async () => {
-      try {
-        // Basic query to test connection
-        await pool.query('SELECT NOW()');
-        console.log("✅ Connected to PostgreSQL database successfully");
-        databaseConnected = true;
-      } catch (error) {
-        console.error("❌ Failed to connect to PostgreSQL database:", error.message);
-        console.warn("Falling back to memory-based storage for development");
-        databaseConnected = false;
-      }
-    })();
+    try {
+      // Basic query to test connection
+      await pool.query('SELECT NOW()');
+      console.log("✅ Connected to PostgreSQL database successfully");
+      databaseConnected = true;
+    } catch (error) {
+      console.error("❌ Failed to connect to PostgreSQL database:", error.message);
+      console.warn("Falling back to memory-based storage for development");
+      databaseConnected = false;
+    }
+    
   } catch (error) {
     console.error("❌ Error setting up database connection:", error.message);
     console.warn("Falling back to memory-based storage for development");
@@ -49,6 +54,11 @@ if (!process.env.DATABASE_URL) {
     db = null;
     databaseConnected = false;
   }
+  
+  return { pool, db, databaseConnected };
 }
+
+// Initialize connection immediately, but don't wait for it to complete
+initDatabaseConnection();
 
 export { pool, db, databaseConnected };

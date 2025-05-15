@@ -572,15 +572,22 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Determine which storage to use based on database availability
+// Storage initialization
 let storage: IStorage;
 
-if (!db || !databaseConnected) {
-  console.log("⚠️ Using memory storage as fallback since database is not available");
-  storage = new MemStorage();
-} else {
-  console.log("✅ Using database storage");
-  storage = new DatabaseStorage();
+// Initialize storage based on database availability
+export function initStorage() {
+  if (!db || !databaseConnected) {
+    console.log("⚠️ Using memory storage as fallback since database is not available");
+    storage = new MemStorage();
+  } else {
+    console.log("✅ Using database storage");
+    storage = new DatabaseStorage();
+  }
+  return storage;
 }
+
+// Initialize storage immediately
+storage = initStorage();
 
 export { storage };
