@@ -314,13 +314,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Job posting not found" });
       }
       
+      // Get the application links
       const applicationLinks = await storage.getApplicationLinks(jobId);
       
-      // Add full URLs to each application link
+      // Get the job posting with category and location information for SEO URL
+      const jobWithDetails = await db.select({
+        id: jobPostings.id,
+        title: jobPostings.title,
+        url_slug: jobPostings.url_slug,
+        category_name: jobCategories.name,
+        category_slug: jobCategories.slug,
+        location_name: locations.name,
+        city: locations.city
+      })
+      .from(jobPostings)
+      .leftJoin(jobCategories, eq(jobPostings.categoryId, jobCategories.id))
+      .leftJoin(locations, eq(jobPostings.locationId, locations.id))
+      .where(eq(jobPostings.id, jobId))
+      .limit(1);
+      
+      const job = jobWithDetails[0];
+      
+      // Generate SEO-friendly URLs for each link
       const baseUrl = `${req.protocol}://${req.get('host')}`;
-      const linksWithUrls = applicationLinks.map(link => ({
-        ...link,
-        applicationUrl: `${baseUrl}/apply/${jobId}/${link.hash}`
+      
+      // Process application links with SEO-friendly URLs
+      const linksWithUrls = await Promise.all(applicationLinks.map(async link => {
+        // Generate the SEO-friendly URL
+        const seoUrlPath = await generateSEOFriendlyJobURL(jobId);
+        const seoUrl = seoUrlPath ? `${baseUrl}${seoUrlPath}` : null;
+        
+        // Also provide the fallback URL (legacy format)
+        const fallbackUrl = `${baseUrl}/apply/${jobId}/${link.hash}`;
+        
+        return {
+          ...link,
+          // Primary application URL (SEO-friendly)
+          applicationUrl: seoUrl || fallbackUrl,
+          // Legacy URL format as fallback
+          legacyUrl: fallbackUrl,
+          // Job details for display
+          jobTitle: job.title,
+          categoryName: job.category_name,
+          locationName: job.location_name,
+          city: job.city
+        };
       }));
       
       return res.json(linksWithUrls);

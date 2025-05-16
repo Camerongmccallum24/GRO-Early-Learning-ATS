@@ -77,6 +77,23 @@ export const insertLocationSchema = createInsertSchema(locations).omit({
 export type InsertLocation = z.infer<typeof insertLocationSchema>;
 export type Location = typeof locations.$inferSelect;
 
+// Job Categories
+export const jobCategories = pgTable("job_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertJobCategorySchema = createInsertSchema(jobCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertJobCategory = z.infer<typeof insertJobCategorySchema>;
+export type JobCategory = typeof jobCategories.$inferSelect;
+
 // Job Postings
 export const jobPostings = pgTable("job_postings", {
   id: serial("id").primaryKey(),
@@ -85,6 +102,8 @@ export const jobPostings = pgTable("job_postings", {
   departmentId: integer("department_id"),
   hiringManagerId: varchar("hiring_manager_id").references(() => users.id),
   locationId: integer("location_id").notNull().references(() => locations.id),
+  categoryId: integer("category_id").references(() => jobCategories.id),
+  url_slug: text("url_slug"), // SEO-friendly URL component
   employmentType: employmentTypeEnum("employment_type").notNull(),
   salaryMin: integer("salary_min"),
   salaryMax: integer("salary_max"),
@@ -106,6 +125,10 @@ export const jobPostingsRelations = relations(jobPostings, ({ one, many }) => ({
   location: one(locations, {
     fields: [jobPostings.locationId],
     references: [locations.id],
+  }),
+  category: one(jobCategories, {
+    fields: [jobPostings.categoryId],
+    references: [jobCategories.id],
   }),
   applications: many(applications),
   createdBy: one(users, {
@@ -300,6 +323,7 @@ export const applicationLinks = pgTable("application_links", {
   id: serial("id").primaryKey(),
   jobPostingId: integer("job_posting_id").notNull().references(() => jobPostings.id),
   hash: text("hash").notNull().unique(),
+  customUrlSlug: text("custom_url_slug"), // Optional custom URL slug override
   createdById: varchar("created_by_id").references(() => users.id),
   expiryDate: timestamp("expiry_date"),
   isActive: boolean("is_active").default(true).notNull(),
