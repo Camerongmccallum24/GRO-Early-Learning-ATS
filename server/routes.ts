@@ -14,6 +14,10 @@ interface Request extends ExpressRequest {
 }
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { jobPostings, locations, jobCategories } from "../shared/schema";
+import { eq } from "drizzle-orm";
+import { generateSEOFriendlyJobURL } from "./utils/application-links";
 import multer from "multer";
 import path from "path";
 import fs from "fs";

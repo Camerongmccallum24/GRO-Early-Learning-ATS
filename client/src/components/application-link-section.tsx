@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Link2, Copy, Loader2, Plus } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Link2, Loader2, Plus, Globe, Calendar } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
+import SEOApplicationLink from "./seo-application-link";
 
 interface ApplicationLinkSectionProps {
   jobId: number;
@@ -15,7 +18,19 @@ interface ApplicationLinkSectionProps {
 export default function ApplicationLinkSection({ jobId }: ApplicationLinkSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [copying, setCopying] = useState<number | null>(null);
+  const [editingLink, setEditingLink] = useState<any>(null);
+  const [customSlug, setCustomSlug] = useState("");
+  const [slugEditOpen, setSlugEditOpen] = useState(false);
+  
+  // Responsive state
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  
+  // Update mobile state on window resize
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch existing application links for this job
   const { data: applicationLinks = [], isLoading } = useQuery({
@@ -50,26 +65,44 @@ export default function ApplicationLinkSection({ jobId }: ApplicationLinkSection
       });
     },
   });
-
-  const handleCopyLink = (link: string, id: number) => {
-    setCopying(id);
-    navigator.clipboard.writeText(link)
-      .then(() => {
-        toast({
-          title: "Link copied to clipboard",
-          description: "You can now share this link with candidates.",
-        });
-      })
-      .catch((error) => {
-        toast({
-          title: "Error copying link",
-          description: error instanceof Error ? error.message : "Please try again",
-          variant: "destructive",
-        });
-      })
-      .finally(() => {
-        setTimeout(() => setCopying(null), 1000);
+  
+  // Update URL slug mutation
+  const updateSlugMutation = useMutation({
+    mutationFn: async (data: { linkId: number, customSlug: string }) => {
+      return apiRequest("PATCH", `/api/application-links/${data.linkId}/slug`, {
+        customUrlSlug: data.customSlug
       });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/job-postings/${jobId}/application-links`] });
+      toast({
+        title: "URL slug updated",
+        description: "The application link URL has been updated successfully.",
+      });
+      setSlugEditOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating URL slug",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const handleEditSlug = (link: any) => {
+    setEditingLink(link);
+    setCustomSlug(link.customUrlSlug || "");
+    setSlugEditOpen(true);
+  };
+  
+  const handleSaveSlug = () => {
+    if (editingLink) {
+      updateSlugMutation.mutate({
+        linkId: editingLink.id,
+        customSlug: customSlug.trim()
+      });
+    }
   };
 
   return (
@@ -112,47 +145,76 @@ export default function ApplicationLinkSection({ jobId }: ApplicationLinkSection
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {applicationLinks.map((link: any) => (
-            <div key={link.id} className="bg-gray-50 p-3 rounded-md border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center">
-                  <Link2 className="h-4 w-4 text-gray-500 mr-2" />
-                  <span className="text-sm font-medium">Link {link.id}</span>
+            <div key={link.id} className="space-y-1">
+              <SEOApplicationLink
+                jobId={jobId}
+                jobTitle={link.jobTitle || "Job Posting"}
+                category={link.categoryName || "Job"}
+                location={link.city || "Location"}
+                applicationUrl={link.applicationUrl}
+                isMobile={isMobile}
+                onEdit={() => handleEditSlug(link)}
+              />
+              
+              <div className="flex justify-between items-center px-4 py-2 text-xs text-gray-500">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3 text-gray-400" />
+                  <span>Created {formatDate(link.createdAt)}</span>
                 </div>
-                <span className="text-xs text-gray-500">
-                  Created {formatDate(link.createdAt)}
-                </span>
-              </div>
-              <div className="flex">
-                <Input
-                  value={link.applicationUrl}
-                  readOnly
-                  className="text-sm font-mono bg-white"
-                />
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="ml-2"
-                  onClick={() => handleCopyLink(link.applicationUrl, link.id)}
-                >
-                  {copying === link.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                <span>Clicks: {link.clickCount || 0}</span>
-                {link.expiryDate && (
-                  <span>Expires: {formatDate(link.expiryDate)}</span>
-                )}
+                <div className="flex items-center gap-1">
+                  <Globe className="h-3 w-3 text-gray-400" />
+                  <span>Clicks: {link.clickCount || 0}</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+      
+      {/* URL Slug Edit Dialog */}
+      <Dialog open={slugEditOpen} onOpenChange={setSlugEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit URL Slug</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="custom-slug">Custom URL Slug</Label>
+            <div className="mt-2 mb-1 text-xs text-gray-500">
+              The URL slug appears in the application link and can help with SEO.
+            </div>
+            <Input
+              id="custom-slug"
+              value={customSlug}
+              onChange={(e) => setCustomSlug(e.target.value)}
+              placeholder="e.g., lead-teacher-position"
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setSlugEditOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveSlug}
+              disabled={updateSlugMutation.isPending}
+            >
+              {updateSlugMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
