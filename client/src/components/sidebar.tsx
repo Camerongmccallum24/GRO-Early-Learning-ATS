@@ -40,44 +40,67 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Handle window resize and manage responsive state
   useEffect(() => {
     const handleResize = () => {
       const newIsSmallScreen = window.innerWidth < 768;
-      setIsSmallScreen(newIsSmallScreen);
       
-      // If transitioning from mobile to desktop, ensure sidebar state is synchronized
-      if (!newIsSmallScreen && isSmallScreen) {
-        // Reset mobile menu state when transitioning to desktop
-        setIsMobileMenuOpen(false);
+      // Only update if the screen size classification has changed to avoid unnecessary re-renders
+      if (newIsSmallScreen !== isSmallScreen) {
+        setIsSmallScreen(newIsSmallScreen);
         
-        // Restore saved collapsed state from localStorage when returning to desktop
-        const savedState = localStorage.getItem('sidebar-collapsed');
-        if (savedState) {
-          setIsCollapsed(savedState === 'true');
+        // When transitioning to desktop view, close mobile menu
+        if (!newIsSmallScreen && isMobileMenuOpen) {
+          setIsMobileMenuOpen(false);
+        }
+        
+        // Restore saved sidebar collapsed state when returning to desktop
+        if (!newIsSmallScreen) {
+          const savedState = localStorage.getItem('sidebar-collapsed');
+          if (savedState) {
+            setIsCollapsed(savedState === 'true');
+          }
         }
       }
     };
 
+    // Initial check
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [isSmallScreen]);
+    
+    // Add event listener with throttling to avoid performance issues
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const throttledResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(handleResize, 100);
+    };
+    
+    window.addEventListener('resize', throttledResize);
+    return () => {
+      window.removeEventListener('resize', throttledResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [isSmallScreen, isMobileMenuOpen]);
 
-  // Close mobile menu when location changes or screen size changes
+  // Close mobile menu when navigation location changes
   useEffect(() => {
-    if (isSmallScreen) {
+    if (isMobileMenuOpen) {
       setIsMobileMenuOpen(false);
     }
-  }, [location, isSmallScreen]);
+  }, [location]);
   
-  // Toggle body class to prevent background scrolling when mobile menu is open
+  // Manage body scroll locking when mobile menu is open
   useEffect(() => {
-    if (isSmallScreen && isMobileMenuOpen) {
+    if (isMobileMenuOpen) {
       document.body.classList.add('sidebar-open');
     } else {
       document.body.classList.remove('sidebar-open');
     }
-  }, [isSmallScreen, isMobileMenuOpen]);
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('sidebar-open');
+    };
+  }, [isMobileMenuOpen]);
 
   const toggleCollapsed = () => {
     const newState = !isCollapsed;
@@ -120,7 +143,10 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => setIsMobileMenuOpen(true)}
+          onClick={() => {
+            // Force isMobileMenuOpen to be true when clicked
+            setTimeout(() => setIsMobileMenuOpen(true), 0);
+          }}
           aria-label="Open navigation menu"
           aria-expanded={isMobileMenuOpen}
           aria-controls="mobile-sidebar"
@@ -175,10 +201,14 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
           {/* Mobile close button - enhanced accessibility */}
           {isSmallScreen && (
             <button
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={() => {
+                // Use setTimeout to ensure state updates correctly
+                setTimeout(() => setIsMobileMenuOpen(false), 0);
+              }}
               aria-label="Close menu"
               className="absolute right-3 top-3 flex items-center justify-center h-10 w-10 rounded-full 
-                           text-[#2c2c2c] hover:bg-gray-100 focus:ring-2 focus:ring-[#7356ff] focus:outline-none"
+                        text-[#2c2c2c] hover:bg-gray-100 focus:ring-2 focus:ring-[#7356ff] focus:outline-none
+                        active:bg-gray-200 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -279,8 +309,13 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={() => {
+            // Use setTimeout to ensure state updates correctly
+            setTimeout(() => setIsMobileMenuOpen(false), 0);
+          }}
           aria-hidden="true"
+          role="button"
+          tabIndex={-1}
         />
       )}
     </>

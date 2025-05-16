@@ -8,6 +8,7 @@ import { Briefcase, Plus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDate, formatEmploymentType, formatJobStatus } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { JobPostingsTable } from "@/components/JobPostingsTable";
 import {
   Dialog,
   DialogContent,
@@ -145,149 +146,57 @@ export default function JobPostings() {
       {/* Filters */}
       <JobFilters onFilterChange={handleFilterChange} />
 
-      {/* Job Postings List */}
+      {/* Job Postings List - Using our Responsive Table Component */}
       <Card className="shadow overflow-hidden">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#7A869A] uppercase tracking-wider">Position</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#7A869A] uppercase tracking-wider">Location</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#7A869A] uppercase tracking-wider">Type</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#7A869A] uppercase tracking-wider">Applications</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#7A869A] uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-[#7A869A] uppercase tracking-wider">Published</th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      Loading job postings...
-                    </td>
-                  </tr>
-                ) : jobPostings.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                      No job postings found.
-                      <Link href="/jobs/new">
-                        <Button variant="link" className="ml-2">
-                          Create one now
-                        </Button>
-                      </Link>
-                    </td>
-                  </tr>
-                ) : (
-                  jobPostings.map((job: any) => {
-                    const status = formatJobStatus(job.status);
-                    
-                    return (
-                      <tr 
-                        key={job.id} 
-                        className="cursor-pointer hover:bg-gray-50"
-                        onClick={() => {
-                          // Navigate to job details
-                          window.location.href = `/jobs/edit/${job.id}`;
-                        }}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-[#172B4D]">{job.title}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-[#172B4D]">{job.locationName}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-[#172B4D]">{formatEmploymentType(job.employmentType)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-[#172B4D]">{job.applicationCount || 0}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${status.colorClass}`}>
-                            {status.text}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-[#7A869A]">
-                          {job.status === "draft" ? "-" : formatDate(job.createdAt)}
-                        </td>
-                        <td 
-                          className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
-                          onClick={(e) => {
-                            // Prevent click from propagating to the row
-                            e.stopPropagation();
-                          }}
-                        >
-                          {job.status === "closed" ? (
-                            <>
-                              <Link 
-                                href={`/jobs/edit/${job.id}`} 
-                                className="text-primary hover:text-blue-700 mr-3"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                View
-                              </Link>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleReopenJob(job.id);
-                                }}
-                                className="text-secondary hover:text-green-700"
-                              >
-                                Reopen
-                              </button>
-                            </>
-                          ) : job.status === "draft" ? (
-                            <>
-                              <Link 
-                                href={`/jobs/edit/${job.id}`} 
-                                className="text-primary hover:text-blue-700 mr-3"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Edit
-                              </Link>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // For drafts, we'd normally publish instead of close
-                                  handleReopenJob(job.id);
-                                }}
-                                className="text-secondary hover:text-green-700"
-                              >
-                                Publish
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <Link 
-                                href={`/jobs/edit/${job.id}`} 
-                                className="text-primary hover:text-blue-700 mr-3"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Edit
-                              </Link>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCloseJob(job.id);
-                                }}
-                                className="text-[#FF5630] hover:text-red-700"
-                              >
-                                Close
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+        <CardContent className="p-0 md:p-4">
+          {isLoading ? (
+            <div className="p-6 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-gray-500">Loading job postings...</p>
+            </div>
+          ) : jobPostings.length === 0 ? (
+            <div className="p-6 text-center">
+              <p className="text-gray-500 mb-3">No job postings found.</p>
+              <Link href="/jobs/new">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create one now
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-hidden">
+              <JobPostingsTable 
+                jobPostings={jobPostings.map((job: any) => ({
+                  id: job.id,
+                  title: job.title,
+                  requisitionId: job.requisitionId || '-',
+                  status: job.status,
+                  category: job.category || 'General',
+                  location: job.locationName,
+                  employmentType: formatEmploymentType(job.employmentType),
+                  createdAt: job.createdAt
+                }))}
+                onView={(id) => {
+                  window.location.href = `/jobs/edit/${id}`;
+                }}
+                onEdit={(id) => {
+                  window.location.href = `/jobs/edit/${id}`;
+                }}
+                onDelete={(id) => {
+                  if (jobPostings.find((job: any) => job.id === id)?.status === 'closed') {
+                    handleReopenJob(id);
+                  } else {
+                    handleCloseJob(id);
+                  }
+                }}
+                onCreateLink={(id) => {
+                  // Redirect to job edit page with application link section open
+                  window.location.href = `/jobs/edit/${id}?section=application-links`;
+                }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
