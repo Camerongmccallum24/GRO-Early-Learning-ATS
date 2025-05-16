@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import JobPostings from "@/pages/job-postings";
 import JobPostingForm from "@/pages/job-posting-form";
+import JobPostingPage from "@/pages/job-posting-page";
 import Candidates from "@/pages/candidates";
 import Applications from "@/pages/applications";
 import Interviews from "@/pages/interviews";
@@ -198,12 +199,17 @@ function Router() {
         )}
       </Route>
 
-      {/* Legacy route format */}
+      {/* Direct job posting page (non-SEO) */}
+      <Route path="/job-posting/:jobId">
+        {(params) => <JobPostingPage jobId={params.jobId} />}
+      </Route>
+      
+      {/* Legacy route format for application */}
       <Route path="/apply/:jobId/:hash">
         {(params) => <Apply jobId={params.jobId} hash={params.hash} />}
       </Route>
       
-      {/* SEO-friendly URL format: /careers/{category}/{job-title-location-id} */}
+      {/* Public job posting page (SEO-friendly) */}
       <Route path="/careers/:category/:slug">
         {(params) => {
           // Extract query parameters for hash if present
@@ -214,7 +220,13 @@ function Router() {
           const slugParts = params.slug.split('-');
           const jobId = slugParts[slugParts.length - 1];
           
-          return <Apply jobId={jobId} hash={applyHash || undefined} seoMode={true} category={params.category} />;
+          // If apply=true or we have an actual hash, show application form
+          if (applyHash) {
+            return <Apply jobId={jobId} hash={applyHash !== 'true' ? applyHash : undefined} seoMode={true} category={params.category} />;
+          }
+          
+          // Otherwise show the job posting page
+          return <JobPostingPage jobId={jobId} seoMode={true} category={params.category} slug={params.slug} />;
         }}
       </Route>
       
