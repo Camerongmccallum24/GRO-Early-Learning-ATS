@@ -22,6 +22,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { parseResume } from "./resume-parser";
+import { isSlugUnique } from "./utils/application-links";
 import { z } from "zod";
 import { upsertUserSchema, insertJobPostingSchema, insertCandidateSchema, insertApplicationSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated, getUser } from "./simpleReplitAuth";
@@ -369,6 +370,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get application links error:", error);
       return res.status(500).json({ message: "Error fetching application links" });
+    }
+  });
+  
+  // Update URL slug for an application link
+  app.patch("/api/application-links/:id/slug", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const linkId = parseInt(req.params.id);
+      const { customUrlSlug } = req.body;
+      
+      if (isNaN(linkId)) {
+        return res.status(400).json({ message: "Invalid application link ID" });
+      }
+      
+      // Validate slug format
+      if (customUrlSlug && !/^[a-z0-9-]+$/.test(customUrlSlug)) {
+        return res.status(400).json({ message: "Custom URL slug can only contain lowercase letters, numbers, and hyphens" });
+      }
+      
+      // Get the application link to find its job ID
+      const link = await storage.getApplicationLinkById(linkId);
+      
+      if (!link) {
+        return res.status(404).json({ message: "Application link not found" });
+      }
+      
+      // Check if the slug is already in use by another job posting
+      if (customUrlSlug) {
+        const isUnique = await isSlugUnique(customUrlSlug, link.jobPostingId);
+        if (!isUnique) {
+          return res.status(400).json({ message: "This URL slug is already in use by another job posting" });
+        }
+      }
+      
+      // Update the job posting with the custom URL slug
+      await storage.updateJobPosting(link.jobPostingId, { 
+        urlSlug: customUrlSlug || null 
+      });
+      
+      res.json({ message: "URL slug updated successfully" });
+    } catch (error) {
+      console.error('Update URL slug error:', error);
+      res.status(500).json({ message: "Error updating URL slug" });
     }
   });
   

@@ -198,8 +198,24 @@ function Router() {
         )}
       </Route>
 
+      {/* Legacy route format */}
       <Route path="/apply/:jobId/:hash">
-        {(params) => <Apply />}
+        {(params) => <Apply jobId={params.jobId} hash={params.hash} />}
+      </Route>
+      
+      {/* SEO-friendly URL format: /careers/{category}/{job-title-location-id} */}
+      <Route path="/careers/:category/:slug">
+        {(params) => {
+          // Extract query parameters for hash if present
+          const queryParams = new URLSearchParams(window.location.search);
+          const applyHash = queryParams.get('apply');
+          
+          // Extract jobId from the slug (last segment after the final hyphen)
+          const slugParts = params.slug.split('-');
+          const jobId = slugParts[slugParts.length - 1];
+          
+          return <Apply jobId={jobId} hash={applyHash || undefined} seoMode={true} category={params.category} />;
+        }}
       </Route>
       
       <Route component={NotFound} />

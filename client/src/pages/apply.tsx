@@ -5,8 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Loader2, AlertTriangle, Check } from "lucide-react";
 import { ApplicationForm } from "@/components/application-form";
 
-export default function Apply() {
-  const { jobId, hash } = useParams();
+interface ApplyProps {
+  jobId?: string;
+  hash?: string;
+  seoMode?: boolean;
+  category?: string;
+}
+
+export default function Apply({ 
+  jobId: propJobId, 
+  hash: propHash, 
+  seoMode = false,
+  category
+}: ApplyProps) {
+  // Get URL parameters either from props or from useParams
+  const params = useParams();
+  const jobId = propJobId || params.jobId;
+  const hash = propHash || params.hash;
+  
   const [, navigate] = useLocation();
   const [isValidating, setIsValidating] = useState(true);
   const [isValid, setIsValid] = useState(false);
@@ -14,7 +30,51 @@ export default function Apply() {
   const [error, setError] = useState<string | null>(null);
   const [applicationSubmitted, setApplicationSubmitted] = useState(false);
 
-  // Validate the application link
+  // First, if we're in SEO mode with no hash, just fetch the job details directly
+  useEffect(() => {
+    const fetchJobDetails = async () => {
+      if (seoMode && !hash) {
+        setIsValidating(true);
+        
+        try {
+          // Just fetch job details without validation
+          const response = await fetch(`/api/job-postings/${jobId}`);
+          
+          if (!response.ok) {
+            setIsValid(false);
+            setError("Job posting not found or no longer available.");
+            setIsValidating(false);
+            return;
+          }
+          
+          const jobData = await response.json();
+          
+          // Verify job is active
+          if (jobData.status !== 'active') {
+            setIsValid(false);
+            setError("This job is no longer accepting applications.");
+            setIsValidating(false);
+            return;
+          }
+          
+          // If the job exists and is active, it's valid
+          setIsValid(true);
+          setJobDetails(jobData);
+          setIsValidating(false);
+        } catch (error) {
+          setIsValid(false);
+          setError("An error occurred while retrieving job details.");
+          setIsValidating(false);
+        }
+      }
+    };
+    
+    if (seoMode && !hash) {
+      fetchJobDetails();
+    }
+  }, [seoMode, jobId, hash]);
+
+  // Validate the application link if we have a hash
   useEffect(() => {
     const validateLink = async () => {
       try {
@@ -44,14 +104,16 @@ export default function Apply() {
       }
     };
 
+    // Only validate if we have both a jobId and hash
     if (jobId && hash) {
       validateLink();
-    } else {
+    } else if (!seoMode) {
+      // Only show an error for the legacy URL format if we're missing parameters
       setIsValid(false);
       setError("Invalid application link.");
       setIsValidating(false);
     }
-  }, [jobId, hash]);
+  }, [jobId, hash, seoMode]);
 
   const handleApplicationSubmit = () => {
     setApplicationSubmitted(true);
