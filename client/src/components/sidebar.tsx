@@ -42,19 +42,42 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsSmallScreen(window.innerWidth < 768);
+      const newIsSmallScreen = window.innerWidth < 768;
+      setIsSmallScreen(newIsSmallScreen);
+      
+      // If transitioning from mobile to desktop, ensure sidebar state is synchronized
+      if (!newIsSmallScreen && isSmallScreen) {
+        // Reset mobile menu state when transitioning to desktop
+        setIsMobileMenuOpen(false);
+        
+        // Restore saved collapsed state from localStorage when returning to desktop
+        const savedState = localStorage.getItem('sidebar-collapsed');
+        if (savedState) {
+          setIsCollapsed(savedState === 'true');
+        }
+      }
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isSmallScreen]);
 
+  // Close mobile menu when location changes or screen size changes
   useEffect(() => {
     if (isSmallScreen) {
       setIsMobileMenuOpen(false);
     }
   }, [location, isSmallScreen]);
+  
+  // Toggle body class to prevent background scrolling when mobile menu is open
+  useEffect(() => {
+    if (isSmallScreen && isMobileMenuOpen) {
+      document.body.classList.add('sidebar-open');
+    } else {
+      document.body.classList.remove('sidebar-open');
+    }
+  }, [isSmallScreen, isMobileMenuOpen]);
 
   const toggleCollapsed = () => {
     const newState = !isCollapsed;
