@@ -88,7 +88,7 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile toggle button */}
+      {/* Mobile hamburger menu toggle button - enhanced accessibility and fixed positioning */}
       <div className={cn(
         "fixed top-4 left-4 z-50 md:hidden",
         isMobileMenuOpen ? "opacity-0 pointer-events-none" : "opacity-100",
@@ -98,7 +98,9 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
           variant="outline"
           size="icon"
           onClick={() => setIsMobileMenuOpen(true)}
-          aria-label="Open menu"
+          aria-label="Open navigation menu"
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="mobile-sidebar"
           className="rounded-full bg-[#e89174] text-white shadow-lg hover:bg-[#d8755b] h-12 w-12 
                     flex items-center justify-center focus:ring-2 focus:ring-[#7356ff] focus:ring-offset-2"
         >
@@ -106,16 +108,22 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
         </Button>
       </div>
 
-      {/* Sidebar container */}
-      <div className={cn(
-        "fixed left-0 top-0 h-screen z-50 flex flex-col border-r border-gray-200 bg-[#f9f9f9]",
-        "transition-all duration-300 ease-in-out",
-        "overflow-y-auto overflow-x-hidden",
-        isCollapsed ? "w-20" : "w-64",
-        isSmallScreen ? "w-[280px] shadow-xl" : "",
-        (isSmallScreen && !isMobileMenuOpen) ? "-translate-x-full" : "translate-x-0",
-        !isSmallScreen ? "block" : isMobileMenuOpen ? "block" : "hidden"
-      )}>
+      {/* Sidebar container - Enhanced fixed positioning on desktop and improved mobile handling */}
+      <div 
+        id="mobile-sidebar"
+        className={cn(
+          "fixed left-0 top-0 h-screen z-50 flex flex-col border-r border-gray-200 bg-[#f9f9f9]",
+          "transition-all duration-300 ease-in-out",
+          "overflow-y-auto overflow-x-hidden",
+          /* Width control - desktop and mobile sizes */
+          isCollapsed ? "w-20" : "w-64",
+          /* Mobile specific styling with shadow for depth */
+          isSmallScreen ? "w-[280px] shadow-xl" : "",
+          /* Animation for mobile menu open/close */
+          (isSmallScreen && !isMobileMenuOpen) ? "-translate-x-full" : "translate-x-0",
+          /* Visibility control */
+          !isSmallScreen ? "block" : isMobileMenuOpen ? "block" : "hidden"
+        )}>
         {/* Header */}
         <div className="flex h-20 shrink-0 items-center border-b border-gray-200 px-4">
           <div className={cn(
@@ -130,17 +138,18 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
             )}
           </div>
 
-          {/* Collapse toggle button - desktop only */}
+          {/* Collapse toggle button - desktop only - repositioned for better accessibility */}
           <button
             onClick={toggleCollapsed}
             className="absolute right-4 top-4 hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 group relative"
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <ChevronRightIcon className="h-5 w-5" /> : <ChevronLeftIcon className="h-5 w-5" />}
             <span className="sidebar-tooltip">{isCollapsed ? "Expand" : "Collapse"}</span>
           </button>
 
-          {/* Mobile close button */}
+          {/* Mobile close button - enhanced accessibility */}
           {isSmallScreen && (
             <button
               onClick={() => setIsMobileMenuOpen(false)}

@@ -35,38 +35,48 @@ function LoadingAuth() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
+  // Get sidebar collapsed state from localStorage with fixed default handling
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const savedState = localStorage.getItem('sidebar-collapsed');
-    return savedState ? savedState === 'false' : true; // Default to expanded if not set
+    return savedState ? savedState === 'true' : false; // Default to expanded if not set
   });
   
   const { user } = useAuth();
   const [location] = useLocation();
   
+  // Ensure sidebar state is saved to localStorage
   useEffect(() => {
-    localStorage.setItem('sidebar-collapsed', String(!isCollapsed));
+    localStorage.setItem('sidebar-collapsed', String(isCollapsed));
   }, [isCollapsed]);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    // Layout container - handles the overall page structure with fixed sidebar
+    <div className="flex h-screen overflow-hidden bg-[#F4F5F7]">
+      {/* Sidebar component - now properly handled for fixed positioning */}
       <Sidebar 
         isMobile={true} 
         onCollapseChange={setIsCollapsed} 
       />
       
+      {/* Main content area - adjusted to respect fixed sidebar */}
       <div 
         className={cn(
-          "flex flex-col flex-1 overflow-hidden transition-all duration-300",
-          "content-with-sidebar",
-          !isCollapsed ? "content-with-sidebar-expanded" : ""
+          "flex flex-col flex-1 w-full h-screen transition-all duration-300",
+          // These classes control the content area's position relative to the sidebar
+          isCollapsed ? "md:ml-20" : "md:ml-64",
+          // Mobile optimization - full width on small screens
+          "ml-0"
         )}
       >
-        <main className="flex-1 overflow-y-auto bg-[#F4F5F7] w-full">
+        {/* Main scrollable container */}
+        <main className="flex-1 overflow-y-auto w-full">
+          {/* Content container with proper spacing and padding */}
           <div className={cn(
             "px-3 pb-6 mx-auto transition-all duration-300",
-            "md:pl-24",
-            !isCollapsed ? "md:pl-72" : "",
-            "pt-16 md:pt-6 sm:px-4 md:px-6 lg:px-8"
+            // Spacing adjustments for mobile menu
+            "pt-16 md:pt-6 sm:px-4 md:px-6 lg:px-8",
+            // Ensure content doesn't touch the edge of the screen
+            "max-w-full"
           )}>
             {children}
           </div>

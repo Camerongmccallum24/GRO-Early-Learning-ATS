@@ -99,26 +99,12 @@
 }
 
 /* Main layout and responsive adjustments */
-/* Mobile First Approach */
-.content-with-sidebar {
-  width: 100%;
-  transition: margin-left 0.3s ease;
-  padding-top: 60px; /* Space for mobile header */
-}
+/* Mobile First Approach - Enhanced Fixed Sidebar Layout */
 
-/* Larger screens (md and up) */
-@media (min-width: 768px) {
-  .content-with-sidebar {
-    margin-left: 64px; /* Default collapsed sidebar width */
-    padding-top: 0;
-  }
-  
-  .content-with-sidebar-expanded {
-    margin-left: 256px; /* Expanded sidebar width */
-  }
-}
+/* Main content adjustments for the fixed sidebar */
+/* These have been moved to App.tsx inline styles for more direct control */
 
-/* Enhanced responsive layouts */
+/* Enhanced responsive layouts with fixed sidebar support */
 @media (max-width: 767px) {
   /* Optimize card layouts for small screens */
   .card {
@@ -126,7 +112,7 @@
     margin-bottom: 1rem;
   }
   
-  /* Optimize header spacing */
+  /* Optimize header spacing for mobile */
   .page-header {
     padding-top: 1rem;
     padding-bottom: 1rem;
@@ -155,15 +141,43 @@
   .hide-on-mobile {
     display: none;
   }
+  
+  /* Improved mobile menu handling */
+  #mobile-sidebar {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateX(-100%);
+  }
+  
+  /* When mobile menu is open, add a body-scroll-lock to prevent background scrolling */
+  body.sidebar-open {
+    overflow: hidden;
+  }
 }
 
-/* Medium screens (tablets) */
+/* Tablet and small desktop screens */
 @media (min-width: 768px) and (max-width: 1023px) {
+  /* Adjust content container on tablets */
   .container-responsive {
     max-width: 100%;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
+  
+  /* Ensure sidebar doesn't overlap content too much on smaller screens */
+  #mobile-sidebar:not(.collapsed) {
+    width: 240px; /* Slightly smaller on tablet */
+  }
+}
+
+/* Large desktop screens */
+@media (min-width: 1440px) {
+  /* Provide more breathing room for content on large screens */
+  .container-responsive {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
 }
 
 /* Sidebar transition effects */
