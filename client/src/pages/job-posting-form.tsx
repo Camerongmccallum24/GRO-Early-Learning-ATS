@@ -116,7 +116,7 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
     if (existingJob && isEditMode) {
       // For the deadline date field, we need to convert from string to Date object if it exists
       const deadlineDate = existingJob.deadline ? new Date(existingJob.deadline) : null;
-      
+
       form.reset({
         ...existingJob,
         deadline: deadlineDate,
@@ -180,7 +180,7 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
   const saveDraft = () => {
     const currentValues = form.getValues();
     currentValues.status = "draft";
-    
+
     if (isEditMode) {
       updateJobMutation.mutate(currentValues);
     } else {
@@ -192,14 +192,14 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
   const publishJob = () => {
     const currentValues = form.getValues();
     currentValues.status = "active";
-    
+
     if (isEditMode) {
       updateJobMutation.mutate(currentValues);
     } else {
       createJobMutation.mutate(currentValues);
     }
   };
-  
+
   // Handle template selection
   const handleSelectTemplate = (template: any) => {
     form.setValue("title", template.title);
@@ -208,7 +208,7 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
     form.setValue("description", template.description);
     form.setValue("requirements", template.requirements);
     form.setValue("benefits", template.benefits);
-    
+
     toast({
       title: "Template applied",
       description: `${template.title} template has been applied. You can now customize the details.`,
