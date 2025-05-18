@@ -287,7 +287,7 @@ export function EnhancedEmailForm({
               AI Email Generator
             </h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-4">
               <div className="space-y-2">
                 <Label htmlFor="context" className="text-xs text-purple-800">Email Context</Label>
                 <Select

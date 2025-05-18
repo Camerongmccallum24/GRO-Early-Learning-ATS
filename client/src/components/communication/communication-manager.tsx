@@ -62,39 +62,43 @@ export function CommunicationManager({
   };
   
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Communication Manager</CardTitle>
+    <Card className="w-full overflow-hidden">
+      <CardHeader className="px-4 py-4 sm:px-6">
+        <CardTitle className="text-lg">Communication Manager</CardTitle>
         <CardDescription>
           Connect with {candidateName} through multiple channels
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6 pt-0">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 mb-4">
-            <TabsTrigger value="email" className="flex items-center">
-              <Mail className="h-4 w-4 mr-2" />
-              <span>Email</span>
+          <TabsList className="grid grid-cols-4 mb-4 w-full overflow-x-auto">
+            <TabsTrigger value="email" className="flex items-center text-xs sm:text-sm">
+              <Mail className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Email</span>
+              <span className="xs:hidden">📧</span>
             </TabsTrigger>
             <TabsTrigger 
               value="sms" 
-              className="flex items-center"
+              className="flex items-center text-xs sm:text-sm"
               disabled={!candidatePhone}
             >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              <span>SMS</span>
+              <MessageSquare className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">SMS</span>
+              <span className="xs:hidden">💬</span>
             </TabsTrigger>
             <TabsTrigger 
               value="call" 
-              className="flex items-center"
+              className="flex items-center text-xs sm:text-sm"
               disabled={!candidatePhone}
             >
-              <Phone className="h-4 w-4 mr-2" />
-              <span>Call Log</span>
+              <Phone className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Call Log</span>
+              <span className="xs:hidden">📞</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center">
-              <History className="h-4 w-4 mr-2" />
-              <span>History</span>
+            <TabsTrigger value="history" className="flex items-center text-xs sm:text-sm">
+              <History className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">History</span>
+              <span className="xs:hidden">📋</span>
             </TabsTrigger>
           </TabsList>
           

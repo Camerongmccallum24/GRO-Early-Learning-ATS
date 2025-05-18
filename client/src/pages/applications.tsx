@@ -378,7 +378,7 @@ export default function Applications() {
           }
         }}
       >
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="flex justify-between items-start">
             <div>
               <DialogTitle>Candidate Application</DialogTitle>
