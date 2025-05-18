@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,37 @@ export default function Applications() {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Handle application ID from URL query params (for deep linking from dashboard)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const appId = params.get('id');
+    
+    if (appId) {
+      // Wait for applications to load, then find the one that matches the ID
+      const findAndShowApplication = () => {
+        const apps = queryClient.getQueryData<any[]>(['/api/applications']);
+        if (apps && apps.length > 0) {
+          const app = apps.find(a => a.id.toString() === appId);
+          if (app) {
+            setApplicationDetail(app);
+          }
+        }
+      };
+      
+      // Check if we already have the data
+      findAndShowApplication();
+      
+      // If not, subscribe to the query cache to know when the data is available
+      const unsubscribe = queryClient.getQueryCache().subscribe(() => {
+        findAndShowApplication();
+      });
+      
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [queryClient]);
 
   // Fetch applications with any filters
   const { data: applications = [], isLoading } = useQuery({
