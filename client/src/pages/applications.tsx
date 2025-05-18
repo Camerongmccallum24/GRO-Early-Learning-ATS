@@ -100,7 +100,7 @@ export default function Applications() {
   });
 
   // Fetch locations for filter
-  const { data: locations = [] } = useQuery({
+  const { data: locations = [] } = useQuery<any[]>({
     queryKey: ["/api/locations"],
   });
 
