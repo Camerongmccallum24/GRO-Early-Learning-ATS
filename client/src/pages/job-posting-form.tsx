@@ -127,7 +127,14 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
   // Create job mutation
   const createJobMutation = useMutation({
     mutationFn: async (values: JobPostingFormValues) => {
-      return apiRequest("POST", "/api/job-postings", values);
+      // Add the current user ID as hiring manager and creator
+      const currentUserId = '123456789'; // This is the mock user ID we're using
+      const valuesWithUser = {
+        ...values,
+        hiringManagerId: currentUserId,
+        createdById: currentUserId
+      };
+      return apiRequest("POST", "/api/job-postings", valuesWithUser);
     },
     onSuccess: () => {
       toast({
@@ -148,7 +155,13 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
   // Update job mutation
   const updateJobMutation = useMutation({
     mutationFn: async (values: JobPostingFormValues) => {
-      return apiRequest("PUT", `/api/job-postings/${id}`, values);
+      // Ensure the updated job maintains hiring manager ID
+      const currentUserId = '123456789'; // This is the mock user ID we're using
+      const valuesWithUser = {
+        ...values,
+        hiringManagerId: values.hiringManagerId || currentUserId
+      };
+      return apiRequest("PUT", `/api/job-postings/${id}`, valuesWithUser);
     },
     onSuccess: () => {
       toast({
