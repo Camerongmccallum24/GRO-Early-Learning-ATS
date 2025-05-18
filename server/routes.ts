@@ -26,6 +26,7 @@ import { isSlugUnique } from "./utils/application-links";
 import { z } from "zod";
 import { upsertUserSchema, insertJobPostingSchema, insertCandidateSchema, insertApplicationSchema } from "@shared/schema";
 import { setupAuth, isAuthenticated, getUser } from "./simpleReplitAuth";
+import { registerCommunicationRoutes } from "./api/communication-routes";
 import {
   getAvailableTimeSlots,
   createInterviewEvent,
@@ -1272,6 +1273,9 @@ Employment Type: ${jobPosting.employmentType}
       return res.status(500).json({ message: "Error processing data deletion request" });
     }
   });
+
+  // Register communication routes
+  registerCommunicationRoutes(app, storage);
 
   return httpServer;
 }

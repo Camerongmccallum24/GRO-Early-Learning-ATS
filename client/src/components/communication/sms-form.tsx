@@ -1,93 +1,35 @@
-import React, { useState, useEffect } from "react";
-import { Loader2, Send, AlertCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import React, { useState } from "react";
+import { Loader2, Send, MessageSquare, WhatsappLogo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
+import { FaWhatsapp } from "react-icons/fa";
 
 interface SMSFormProps {
   applicationId: number;
   candidateId: number;
   candidateName: string;
   candidatePhone: string;
-  candidateStatus?: string;
-  onSmsSent?: () => void;
 }
 
 export function SMSForm({
   applicationId,
   candidateId,
   candidateName,
-  candidatePhone,
-  candidateStatus = "applied",
-  onSmsSent
+  candidatePhone
 }: SMSFormProps) {
   const [message, setMessage] = useState("");
-  const [charCount, setCharCount] = useState(0);
-  const [template, setTemplate] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isValid, setIsValid] = useState(false);
-  const [validationMessage, setValidationMessage] = useState("");
+  const [characterCount, setCharacterCount] = useState(0);
+  const [messageCount, setMessageCount] = useState(1);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const MAX_SMS_LENGTH = 160;
-  
-  // SMS validation
-  useEffect(() => {
-    if (!message.trim()) {
-      setIsValid(false);
-      setValidationMessage("Message cannot be empty");
-    } else if (message.length > MAX_SMS_LENGTH) {
-      setIsValid(false);
-      setValidationMessage(`Message is too long (${message.length}/${MAX_SMS_LENGTH} characters)`);
-    } else {
-      setIsValid(true);
-      setValidationMessage("");
-    }
-    
-    setCharCount(message.length);
-  }, [message]);
-  
-  // Apply template
-  const applyTemplate = (templateType: string) => {
-    let newMessage = "";
-    
-    switch (templateType) {
-      case "interview_reminder":
-        newMessage = `Hi ${candidateName.split(' ')[0]}, This is a reminder about your interview tomorrow at GRO Early Learning. Please arrive 10 minutes early. Call us if you need to reschedule.`;
-        break;
-        
-      case "application_received":
-        newMessage = `Hi ${candidateName.split(' ')[0]}, Thank you for applying to GRO Early Learning. We've received your application and will be in touch soon.`;
-        break;
-        
-      case "documents_needed":
-        newMessage = `Hi ${candidateName.split(' ')[0]}, Please submit your certifications for your GRO Early Learning application. Reply to this message if you have questions.`;
-        break;
-        
-      case "offer_acceptance":
-        newMessage = `Hi ${candidateName.split(' ')[0]}, Please confirm receipt of your offer letter from GRO Early Learning, and let us know if you accept by replying to our email.`;
-        break;
-        
-      default:
-        return;
-    }
-    
-    setMessage(newMessage);
-    setTemplate(templateType);
-  };
-  
   // Format phone number for display
   const formatPhoneNumber = (phone: string) => {
-    // Simple formatting - in a real app you'd want a proper phone formatter
-    // based on the country code and number format
     if (!phone) return "";
     
     // Remove all non-digits
@@ -98,28 +40,29 @@ export function SMSForm({
       return `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`;
     }
     
-    // If it's not 10 digits, return with minimal formatting
     return phone;
   };
   
-  // Send SMS
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Calculate character and message counts
+  const updateCounts = (text: string) => {
+    const chars = text.length;
+    setCharacterCount(chars);
     
-    if (!isValid) {
-      toast({
-        title: "Validation Error",
-        description: validationMessage,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      // Send SMS via API
-      await apiRequest("/api/communications/sms", {
+    // SMS typically splits at 160 characters for single-byte characters
+    setMessageCount(Math.ceil(chars / 160) || 1);
+  };
+  
+  // Handle message change
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setMessage(text);
+    updateCounts(text);
+  };
+  
+  // Send SMS mutation
+  const sendSMSMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("/api/communications/sms", {
         method: "POST",
         body: JSON.stringify({
           candidateId,
@@ -131,9 +74,47 @@ export function SMSForm({
           "Content-Type": "application/json",
         },
       });
+    },
+    onSuccess: () => {
+      toast({
+        title: "SMS Sent Successfully",
+        description: `Your message has been sent to ${candidateName}`,
+      });
       
-      // Log communication
-      await apiRequest("/api/communications", {
+      // Clear form
+      setMessage("");
+      setCharacterCount(0);
+      setMessageCount(1);
+      
+      // Refresh communication logs
+      queryClient.invalidateQueries({ queryKey: [`/api/candidates/${candidateId}/communications`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/applications/${applicationId}/communications`] });
+    },
+    onError: (error) => {
+      console.error("Error sending SMS:", error);
+      toast({
+        title: "SMS Not Sent",
+        description: "There was an error sending your message. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Open WhatsApp
+  const openWhatsApp = () => {
+    // Format phone for WhatsApp (remove all non-digits)
+    const whatsappNumber = candidatePhone.replace(/\D/g, "");
+    
+    // Create WhatsApp URL with pre-filled message
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    
+    // Open in new tab
+    window.open(whatsappUrl, "_blank");
+    
+    // Log the communication if there's a message
+    if (message.trim()) {
+      // Create a log entry for the WhatsApp message
+      apiRequest("/api/communications", {
         method: "POST",
         body: JSON.stringify({
           candidateId,
@@ -142,132 +123,114 @@ export function SMSForm({
           message,
           direction: "outbound",
           metadata: {
-            phoneNumber: candidatePhone,
-            template: template || null
+            channel: "whatsapp",
+            phoneNumber: candidatePhone
           }
         }),
         headers: {
           "Content-Type": "application/json",
         },
-      });
-      
-      toast({
-        title: "SMS Sent Successfully",
-        description: `Your message to ${candidateName} has been sent.`,
-      });
-      
-      // Clear form
-      setMessage("");
-      setTemplate("");
-      
-      // Refresh communication logs
-      queryClient.invalidateQueries({ queryKey: [`/api/candidates/${candidateId}/communications`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/applications/${applicationId}/communications`] });
-      
-      if (onSmsSent) {
-        onSmsSent();
-      }
-    } catch (error) {
-      console.error("Error sending SMS:", error);
-      toast({
-        title: "Failed to Send SMS",
-        description: "There was an error sending your message. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      })
+        .then(() => {
+          // Refresh communication logs
+          queryClient.invalidateQueries({ queryKey: [`/api/candidates/${candidateId}/communications`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/applications/${applicationId}/communications`] });
+          
+          // Clear form
+          setMessage("");
+          setCharacterCount(0);
+          setMessageCount(1);
+        })
+        .catch(error => {
+          console.error("Error logging WhatsApp message:", error);
+        });
     }
   };
   
+  // Handle sending SMS
+  const handleSendSMS = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!message.trim()) {
+      toast({
+        title: "Empty Message",
+        description: "Please enter a message before sending",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    sendSMSMutation.mutate();
+  };
+  
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
+    <form onSubmit={handleSendSMS} className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm text-gray-500">To:</span>
-            <span className="font-medium">{formatPhoneNumber(candidatePhone)}</span>
+            <span className="text-sm text-gray-500">Recipient:</span>
+            <span className="font-medium">{candidateName}</span>
+            <span className="text-sm text-gray-500">{formatPhoneNumber(candidatePhone)}</span>
           </div>
           <p className="text-xs text-gray-500">
-            SMS messages are limited to {MAX_SMS_LENGTH} characters
+            Messages will be sent directly to the candidate's mobile phone
           </p>
         </div>
-        
-        <Select 
-          value={template} 
-          onValueChange={applyTemplate}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Templates" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="interview_reminder">Interview Reminder</SelectItem>
-            <SelectItem value="application_received">Application Received</SelectItem>
-            <SelectItem value="documents_needed">Documents Needed</SelectItem>
-            <SelectItem value="offer_acceptance">Offer Acceptance</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
       
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <Label htmlFor="sms-message" className={!message.trim() ? "text-red-500" : ""}>
-            Message {!message.trim() && "*"}
-          </Label>
-          <span className={`text-xs ${charCount > MAX_SMS_LENGTH ? "text-red-500 font-semibold" : "text-gray-500"}`}>
-            {charCount}/{MAX_SMS_LENGTH}
-          </span>
-        </div>
-        
-        <div className="relative">
-          <Textarea 
-            id="sms-message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Enter your SMS message"
-            rows={4}
-            className={(!message.trim() || charCount > MAX_SMS_LENGTH) ? "border-red-300 focus:border-red-500" : ""}
-            disabled={isLoading}
-          />
-          {(!message.trim() || charCount > MAX_SMS_LENGTH) && (
-            <div className="absolute right-3 top-3">
-              <AlertCircle className="h-4 w-4 text-red-500" />
-            </div>
-          )}
-        </div>
-        
-        {/* Message Preview */}
-        {message.trim() && (
-          <Card className="mt-4 bg-gray-50 p-2">
-            <CardContent className="p-2">
-              <p className="text-sm font-medium mb-1">Preview:</p>
-              <div className="bg-white p-3 rounded-md border max-w-md">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="secondary">SMS</Badge>
-                  <span className="text-xs text-gray-500">To: {formatPhoneNumber(candidatePhone)}</span>
-                </div>
-                <p className="text-sm">{message}</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {/* Error Message */}
-        {!isValid && message.trim() && (
-          <div className="text-sm text-red-500 flex items-center mt-2">
-            <AlertCircle className="h-4 w-4 mr-1" />
-            {validationMessage}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <label htmlFor="sms-message" className="text-sm font-medium">
+            Message
+          </label>
+          <div className="text-xs text-gray-500">
+            {characterCount} characters ({messageCount} message{messageCount > 1 ? "s" : ""})
           </div>
+        </div>
+        
+        <Textarea
+          id="sms-message"
+          value={message}
+          onChange={handleMessageChange}
+          placeholder="Type your SMS message here..."
+          rows={4}
+          className={characterCount > 480 ? "border-amber-300" : ""}
+        />
+        
+        {characterCount > 480 && (
+          <p className="text-xs text-amber-600">
+            This message will be sent as multiple SMS messages ({messageCount})
+          </p>
         )}
       </div>
       
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={openWhatsApp}
+          className="text-green-600 border-green-300 hover:bg-green-50"
+        >
+          <FaWhatsapp className="h-4 w-4 mr-2 text-green-600" />
+          Send via WhatsApp
+        </Button>
+        
         <Button 
           type="submit" 
-          disabled={isLoading || !isValid}
-          className="sm:w-auto w-full"
+          disabled={sendSMSMutation.isPending || !message.trim()}
+          className="bg-blue-600 hover:bg-blue-700"
         >
-          {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-          {isLoading ? "Sending..." : "Send SMS"}
+          {sendSMSMutation.isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Sending...
+            </>
+          ) : (
+            <>
+              <Send className="h-4 w-4 mr-2" />
+              Send SMS
+            </>
+          )}
         </Button>
       </div>
     </form>

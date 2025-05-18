@@ -642,6 +642,52 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Communication methods
+  async getCommunicationLogs(candidateId: number): Promise<CommunicationLog[]> {
+    try {
+      const logs = await db.select().from(communicationLogs)
+        .where(eq(communicationLogs.candidateId, candidateId))
+        .orderBy(desc(communicationLogs.timestamp));
+      
+      return logs;
+    } catch (error) {
+      console.error('Error getting communication logs:', error);
+      return [];
+    }
+  }
+
+  async getCommunicationLogsByApplication(applicationId: number): Promise<CommunicationLog[]> {
+    try {
+      const logs = await db.select().from(communicationLogs)
+        .where(eq(communicationLogs.applicationId, applicationId))
+        .orderBy(desc(communicationLogs.timestamp));
+      
+      return logs;
+    } catch (error) {
+      console.error('Error getting communication logs by application:', error);
+      return [];
+    }
+  }
+
+  async createCommunicationLog(log: InsertCommunicationLog): Promise<CommunicationLog> {
+    try {
+      // Add timestamp if not provided
+      const logWithTimestamp = {
+        ...log,
+        timestamp: log.timestamp || new Date()
+      };
+      
+      const result = await db.insert(communicationLogs)
+        .values(logWithTimestamp)
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating communication log:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
