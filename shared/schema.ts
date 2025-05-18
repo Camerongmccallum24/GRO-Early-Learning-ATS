@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, pgEnum, varchar, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, pgEnum, varchar, jsonb, index, time } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -352,3 +352,55 @@ export const insertApplicationLinkSchema = createInsertSchema(applicationLinks).
 
 export type InsertApplicationLink = z.infer<typeof insertApplicationLinkSchema>;
 export type ApplicationLink = typeof applicationLinks.$inferSelect;
+
+// Availability time slots for recurring scheduling
+export const availabilityTimeSlots = pgTable("availability_time_slots", {
+  id: serial("id").primaryKey(),
+  dayOfWeek: integer("day_of_week").notNull(), // 0 = Sunday, 1 = Monday, etc.
+  startTime: time("start_time").notNull(),
+  endTime: time("end_time").notNull(),
+  isDefault: boolean("is_default").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAvailabilityTimeSlotsSchema = createInsertSchema(availabilityTimeSlots).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertAvailabilityTimeSlot = z.infer<typeof insertAvailabilityTimeSlotsSchema>;
+export type AvailabilityTimeSlot = typeof availabilityTimeSlots.$inferSelect;
+
+// Candidate availability preferences
+export const candidateAvailability = pgTable("candidate_availability", {
+  id: serial("id").primaryKey(),
+  candidateId: integer("candidate_id").notNull().references(() => candidates.id),
+  applicationId: integer("application_id").references(() => applications.id),
+  timeZone: text("time_zone").default("Australia/Sydney").notNull(),
+  preferredDays: jsonb("preferred_days").$type<number[]>().notNull(), // Array of days (0-6)
+  preferredTimeStart: time("preferred_time_start").notNull(), // Earliest time
+  preferredTimeEnd: time("preferred_time_end").notNull(), // Latest time
+  specificDates: jsonb("specific_dates").$type<string[]>(), // Optional specific available dates
+  unavailableDates: jsonb("unavailable_dates").$type<string[]>(), // Optional unavailable dates
+  notes: text("notes"),
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+});
+
+export const candidateAvailabilityRelations = relations(candidateAvailability, ({ one }) => ({
+  candidate: one(candidates, {
+    fields: [candidateAvailability.candidateId],
+    references: [candidates.id],
+  }),
+  application: one(applications, {
+    fields: [candidateAvailability.applicationId],
+    references: [applications.id],
+  }),
+}));
+
+export const insertCandidateAvailabilitySchema = createInsertSchema(candidateAvailability).omit({
+  id: true,
+  submittedAt: true,
+});
+
+export type InsertCandidateAvailability = z.infer<typeof insertCandidateAvailabilitySchema>;
+export type CandidateAvailability = typeof candidateAvailability.$inferSelect;

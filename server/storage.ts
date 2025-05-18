@@ -7,7 +7,9 @@ import {
   interviews, type Interview, type InsertInterview,
   communicationLogs, type CommunicationLog, type InsertCommunicationLog,
   auditLogs, type AuditLog, type InsertAuditLog,
-  applicationLinks, type ApplicationLink, type InsertApplicationLink
+  applicationLinks, type ApplicationLink, type InsertApplicationLink,
+  availabilityTimeSlots, type AvailabilityTimeSlot, type InsertAvailabilityTimeSlot,
+  candidateAvailability, type CandidateAvailability, type InsertCandidateAvailability
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, inArray, isNull, sql } from "drizzle-orm";
