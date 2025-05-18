@@ -45,7 +45,29 @@ export default function JobPostings() {
         throw new Error("Failed to fetch job postings");
       }
       
-      return response.json();
+      // Fetch job postings first
+      const jobs = await response.json();
+      
+      // For each job, fetch its application links
+      const jobsWithLinks = await Promise.all(jobs.map(async (job: any) => {
+        try {
+          const linksResponse = await fetch(`/api/job-postings/${job.id}/application-links`, { 
+            credentials: "include" 
+          });
+          
+          if (linksResponse.ok) {
+            const links = await linksResponse.json();
+            return { ...job, applicationLinks: links };
+          }
+          
+          return job;
+        } catch (error) {
+          console.error(`Error fetching application links for job ${job.id}:`, error);
+          return job;
+        }
+      }));
+      
+      return jobsWithLinks;
     },
   });
 

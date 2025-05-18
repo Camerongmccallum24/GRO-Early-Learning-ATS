@@ -1,8 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Plus, FileText, Link } from "lucide-react";
+import { Edit, Trash2, Plus, FileText, Link, ExternalLink } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface JobPosting {
   id: number;
@@ -13,6 +19,12 @@ interface JobPosting {
   location?: string;
   employmentType?: string;
   createdAt: string;
+  applicationLinks?: Array<{
+    id: number;
+    hash: string;
+    description: string;
+    active: boolean;
+  }>;
 }
 
 export function JobPostingsTable({ 
@@ -40,6 +52,7 @@ export function JobPostingsTable({
             <th>Location</th>
             <th>Type</th>
             <th>Created</th>
+            <th>Application Link</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -60,6 +73,45 @@ export function JobPostingsTable({
               <td data-label="Location">{job.location || 'N/A'}</td>
               <td data-label="Type">{job.employmentType || 'N/A'}</td>
               <td data-label="Created">{formatDate(job.createdAt)}</td>
+              <td data-label="Application Link">
+                {job.applicationLinks && job.applicationLinks.length > 0 ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                          onClick={() => {
+                            const url = `/apply/${job.id}/${job.applicationLinks[0].hash}`;
+                            navigator.clipboard.writeText(window.location.origin + url);
+                            // Flash the button to indicate copy
+                            const button = document.activeElement as HTMLButtonElement;
+                            button.classList.add('bg-green-100');
+                            setTimeout(() => button.classList.remove('bg-green-100'), 500);
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          <span className="hidden sm:inline">Copy Link</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Click to copy application link</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm" 
+                    className="text-gray-500"
+                    onClick={() => onCreateLink && onCreateLink(job.id)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Create Link</span>
+                  </Button>
+                )}
+              </td>
               <td data-label="Actions" className="action-cell">
                 <div className="flex items-center gap-2 flex-wrap justify-end">
                   <Button

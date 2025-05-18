@@ -193,7 +193,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate a unique hash for the application link
         const timestamp = Date.now().toString();
         const hashData = `${newJobPosting.id}-${timestamp}`;
-        const hash = require('crypto').createHash('sha256').update(hashData).digest('hex').substring(0, 12);
+        // Use native crypto module (avoid using require in ESM context)
+        const crypto = await import('crypto');
+        const hash = crypto.createHash('sha256').update(hashData).digest('hex').substring(0, 12);
         
         await storage.createApplicationLink({
           jobPostingId: newJobPosting.id,
