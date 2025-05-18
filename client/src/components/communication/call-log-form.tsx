@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Loader2, Phone, Clock, Calendar } from "lucide-react";
+import { Loader2, Phone, Clock, Calendar, HelpCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CallLogFormProps {
   applicationId: number;
@@ -152,15 +158,32 @@ export function CallLogForm({
         </div>
         
         {candidatePhone && (
-          <Button 
-            type="button" 
-            variant="secondary"
-            onClick={initiateCall}
-            className="text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200"
-          >
-            <Phone className="h-4 w-4 mr-2" />
-            Call Now
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="secondary"
+                  onClick={initiateCall}
+                  className="text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200"
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  Call Now
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="p-3 max-w-[300px]">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Direct Call Feature</h4>
+                  <p className="text-xs">
+                    Initiates a call to the candidate's phone number using your device's default calling app.
+                  </p>
+                  <p className="text-xs mt-1">
+                    After your call, return here to log the conversation details and outcome for your records.
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
       

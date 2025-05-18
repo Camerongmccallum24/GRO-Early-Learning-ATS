@@ -24,12 +24,30 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
+
 import { EnhancedEmailForm } from "./enhanced-email-form";
 import { SMSForm } from "./sms-form";
 import { CallLogForm } from "./call-log-form";
 import { CommunicationHistory } from "./communication-history";
 import { TemplateManager } from "./template-manager";
 
+// Helper component for consistent help tooltips
+function HelpTooltip({ content, children }: { content: React.ReactNode, children?: React.ReactNode }) {
+  return (
+    <TooltipProvider>
+      <Tooltip delayDuration={300}>
+        <TooltipTrigger asChild>
+          <span className="inline-flex cursor-help text-muted-foreground hover:text-foreground transition-colors ml-1">
+            {children || <HelpCircle className="h-4 w-4" />}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="max-w-sm">
+          <div className="text-sm">{content}</div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 interface CommunicationManagerProps {
   applicationId: number;
   candidateId: number;
