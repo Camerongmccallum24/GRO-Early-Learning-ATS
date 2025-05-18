@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowRightIcon, InfoIcon } from "lucide-react";
 
-// Import our new funnel dashboard components
+// Import our funnel dashboard components
 import { HiringFunnel, type FunnelStage } from "@/components/dashboard/funnel-chart";
 import { StageMetrics, type StageMetric } from "@/components/dashboard/stage-metrics";
 import { ApplicationsByCategory, type CategoryData } from "@/components/dashboard/applications-by-category";
 import { ApplicationsTable, type ApplicationRowData } from "@/components/dashboard/applications-table";
+import RecruiterDashboard from "@/components/dashboard/recruiter-dashboard";
 import { 
   RECRUITMENT_STAGES, 
   DB_STATUS_TO_STAGE, 
@@ -330,60 +331,74 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Funnel Visualization */}
-      <HiringFunnel 
-        data={funnelData} 
-        onStageClick={handleStageClick}
-        selectedStage={selectedStage || undefined}
-      />
-
-      {/* Stage Metrics */}
-      <StageMetrics 
-        metrics={stageMetrics} 
-        selectedStage={selectedStage || undefined}
-        onStageClick={handleStageClick}
-      />
-
-      {/* Applications and Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <ApplicationsTable 
-          data={applications}
-          selectedStage={selectedStage}
-          title={selectedStage ? `Applications (${selectedStage})` : "Recent Applications"}
-        />
+      {/* Dashboard View Options */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="pipeline">Recruitment Pipeline</TabsTrigger>
+        </TabsList>
         
-        <Tabs defaultValue="location" className="w-full">
-          <div className="flex justify-between items-center mb-2">
-            <TabsList>
-              <TabsTrigger value="location">By Location</TabsTrigger>
-              <TabsTrigger value="position">By Position</TabsTrigger>
-            </TabsList>
+        <TabsContent value="overview" className="m-0 space-y-4 md:space-y-6">
+          {/* Funnel Visualization */}
+          <HiringFunnel 
+            data={funnelData} 
+            onStageClick={handleStageClick}
+            selectedStage={selectedStage || undefined}
+          />
+
+          {/* Stage Metrics */}
+          <StageMetrics 
+            metrics={stageMetrics} 
+            selectedStage={selectedStage || undefined}
+            onStageClick={handleStageClick}
+          />
+
+          {/* Applications and Metrics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <ApplicationsTable 
+              data={applications}
+              selectedStage={selectedStage}
+              title={selectedStage ? `Applications (${selectedStage})` : "Recent Applications"}
+            />
             
-            {selectedStage && (
-              <div className="text-xs text-gray-500 flex items-center">
-                <InfoIcon size={12} className="mr-1" />
-                Showing data for {selectedStage} stage
+            <Tabs defaultValue="location" className="w-full">
+              <div className="flex justify-between items-center mb-2">
+                <TabsList>
+                  <TabsTrigger value="location">By Location</TabsTrigger>
+                  <TabsTrigger value="position">By Position</TabsTrigger>
+                </TabsList>
+                
+                {selectedStage && (
+                  <div className="text-xs text-gray-500 flex items-center">
+                    <InfoIcon size={12} className="mr-1" />
+                    Showing data for {selectedStage} stage
+                  </div>
+                )}
               </div>
-            )}
+              
+              <TabsContent value="location" className="m-0">
+                <ApplicationsByCategory
+                  title="Applications by Location"
+                  data={locationData}
+                  selectedStage={selectedStage || undefined}
+                />
+              </TabsContent>
+              
+              <TabsContent value="position" className="m-0">
+                <ApplicationsByCategory
+                  title="Applications by Position"
+                  data={positionData}
+                  selectedStage={selectedStage || undefined}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
-          
-          <TabsContent value="location" className="m-0">
-            <ApplicationsByCategory
-              title="Applications by Location"
-              data={locationData}
-              selectedStage={selectedStage || undefined}
-            />
-          </TabsContent>
-          
-          <TabsContent value="position" className="m-0">
-            <ApplicationsByCategory
-              title="Applications by Position"
-              data={positionData}
-              selectedStage={selectedStage || undefined}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+        </TabsContent>
+        
+        <TabsContent value="pipeline" className="m-0">
+          <RecruiterDashboard />
+        </TabsContent>
+      </Tabs>
 
       {/* Actions Card */}
       <Card>
