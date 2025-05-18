@@ -89,12 +89,16 @@ export default function RecruiterDashboard() {
   const { data: applications = [], isLoading: isLoadingApplications } = useQuery<Application[]>({
     queryKey: ["/api/applications"],
     queryFn: async () => {
-      const url = "/api/applications";
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch applications');
+      try {
+        const response = await fetch("/api/applications");
+        if (!response.ok) {
+          throw new Error('Failed to fetch applications');
+        }
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+        return [];
       }
-      return response.json();
     }
   });
 
@@ -102,12 +106,16 @@ export default function RecruiterDashboard() {
   const { data: stats = {} as DashboardStats, isLoading: isLoadingStats } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     queryFn: async () => {
-      const url = "/api/dashboard/stats";
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+      try {
+        const response = await fetch("/api/dashboard/stats");
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+        return {} as DashboardStats;
       }
-      return response.json();
     }
   });
 
@@ -210,8 +218,15 @@ export default function RecruiterDashboard() {
       // This is just a visual reordering
     } else {
       // Move to a different stage - update on server
-      const appId = parseInt(draggableId);
-      moveCandidate(appId, destStage);
+      try {
+        const appId = parseInt(draggableId);
+        if (!isNaN(appId)) {
+          moveCandidate(appId, destStage);
+        }
+      } catch (err) {
+        console.error("Error processing drag and drop:", err);
+        setError("Failed to process drag and drop operation");
+      }
     }
   };
 
