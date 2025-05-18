@@ -264,17 +264,31 @@ export function EnhancedEmailForm({
             </div>
           )}
           
-          {/* AI options toggle */}
-          <Button
-            type="button"
-            variant={showAIOptions ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowAIOptions(!showAIOptions)}
-            className={showAIOptions ? "bg-purple-600 hover:bg-purple-700" : ""}
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            AI Options
-          </Button>
+          {/* AI options toggle with tooltip */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant={showAIOptions ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowAIOptions(!showAIOptions)}
+                  className={showAIOptions ? "bg-purple-600 hover:bg-purple-700" : ""}
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  AI Options
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="p-3 max-w-[300px]">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">AI Email Generator</h4>
+                  <p className="text-xs">
+                    Generate personalized emails using AI assistance. Select the context, tone, and add custom details to create professional communications.
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
       

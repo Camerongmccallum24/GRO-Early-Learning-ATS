@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Loader2, Send, MessageSquare, WhatsappLogo } from "lucide-react";
+import { Loader2, Send, MessageSquare, WhatsappLogo, HelpCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +7,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { FaWhatsapp } from "react-icons/fa";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SMSFormProps {
   applicationId: number;
@@ -205,15 +211,32 @@ export function SMSForm({
       </div>
       
       <div className="flex justify-between">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={openWhatsApp}
-          className="text-green-600 border-green-300 hover:bg-green-50"
-        >
-          <FaWhatsapp className="h-4 w-4 mr-2 text-green-600" />
-          Send via WhatsApp
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={openWhatsApp}
+                className="text-green-600 border-green-300 hover:bg-green-50"
+              >
+                <FaWhatsapp className="h-4 w-4 mr-2 text-green-600" />
+                Send via WhatsApp
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="p-3 max-w-[300px]">
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">WhatsApp Messaging</h4>
+                <p className="text-xs">
+                  Opens WhatsApp Web with your message pre-filled. WhatsApp provides delivery confirmation and read receipts.
+                </p>
+                <p className="text-xs mt-1">
+                  Note: The message will be logged in the communication history for tracking purposes.
+                </p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         
         <Button 
           type="submit" 
