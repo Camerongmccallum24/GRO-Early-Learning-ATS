@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate } from "@/lib/utils";
 import { ApplicationStatusBadge } from "@/components/application-status-badge";
-import { SearchIcon, Filter, MoreHorizontal, Mail } from "lucide-react";
+import { SearchIcon, Filter, MoreHorizontal, Mail, X, Phone } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EmailForm } from "@/components/email-form";
+import { CommunicationManager } from "@/components/communication/communication-manager";
 import {
   Dialog,
   DialogContent,
@@ -400,58 +401,37 @@ export default function Applications() {
           </DialogHeader>
           {applicationDetail && (
             <div className="mt-4">
-              {/* Email Form */}
-              {showEmailForm && applicationDetail.candidate?.email && (
-                <EmailForm
-                  applicationId={applicationDetail.id}
-                  candidateName={applicationDetail.candidate?.name || "Candidate"}
-                  candidateEmail={applicationDetail.candidate?.email}
-                  onEmailSent={() => {
-                    setShowEmailForm(false);
-                    toast({
-                      title: "Email sent successfully",
-                      description: "The candidate has been notified",
-                    });
-                  }}
-                />
+              {/* Communication Manager */}
+              {showEmailForm && applicationDetail.candidate && (
+                <div className="mb-6">
+                  <CommunicationManager
+                    applicationId={applicationDetail.id}
+                    candidateId={applicationDetail.candidate.id}
+                    candidateName={applicationDetail.candidate?.name || "Candidate"}
+                    candidateEmail={applicationDetail.candidate?.email}
+                    candidatePhone={applicationDetail.candidate?.phone}
+                    applicationStatus={applicationDetail.status}
+                    jobTitle={applicationDetail.jobPosting?.title}
+                  />
+                </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-2 flex items-center">
                     Candidate Information
-                    <div className="flex space-x-1 ml-2">
+                    <div className="ml-2">
                       <Button 
                         size="sm" 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0"
+                        variant={showEmailForm ? "default" : "outline"}
+                        className={showEmailForm ? "bg-blue-600 hover:bg-blue-700" : ""}
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowEmailForm(!showEmailForm);
                         }}
                       >
-                        <Mail className="h-4 w-4" />
-                        <span className="sr-only">Send Email</span>
+                        {showEmailForm ? "Hide Communication" : "Contact Candidate"}
                       </Button>
-                      
-                      {applicationDetail.candidate?.phone && (
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Format phone for WhatsApp
-                            const phone = applicationDetail.candidate?.phone.replace(/\D/g, '');
-                            window.open(`https://wa.me/${phone}`, '_blank');
-                          }}
-                        >
-                          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                          </svg>
-                          <span className="sr-only">WhatsApp</span>
-                        </Button>
-                      )}
                     </div>
                   </h3>
                   <div className="bg-gray-50 p-4 rounded-md">
