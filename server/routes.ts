@@ -173,14 +173,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const jobPostingData = insertJobPostingSchema.parse(req.body);
       
+      // Generate a requisition ID if not provided
+      const currentYear = new Date().getFullYear();
+      const requisitionId = jobPostingData.requisitionId || 
+        `GRO-${currentYear}-${Math.floor(1000 + Math.random() * 9000)}`;
+      
       // Add the current user as the creator and hiring manager
       const jobPostingWithUser = {
         ...jobPostingData,
+        requisitionId,
         createdById: req.user?.id,
         hiringManagerId: req.user?.id // Ensure hiring manager is set to avoid FK constraint error
       };
       
       const newJobPosting = await storage.createJobPosting(jobPostingWithUser);
+      
+      // Automatically generate an application link for the new job posting
+      try {
+        const { hash, slug } = await generateSEOFriendlyJobURL(newJobPosting.title);
+        await storage.createApplicationLink({
+          jobPostingId: newJobPosting.id,
+          hash,
+          description: "Default application link",
+          active: true,
+          clickCount: 0,
+        });
+        
+        console.log(`Created application link for job posting ID: ${newJobPosting.id}`);
+      } catch (linkError) {
+        console.error("Error creating application link:", linkError);
+        // Continue with job posting creation even if link creation fails
+      }
       
       // Create audit log
       await storage.createAuditLog({
