@@ -1304,6 +1304,134 @@ Employment Type: ${jobPosting.employmentType}
     }
   });
 
+  // Availability time slots endpoints
+  app.get("/api/availability-time-slots", async (req: Request, res: Response) => {
+    try {
+      const slots = await storage.getAvailabilityTimeSlots();
+      return res.json(slots);
+    } catch (error) {
+      console.error("Get availability time slots error:", error);
+      return res.status(500).json({ message: "Error fetching availability time slots" });
+    }
+  });
+  
+  app.post("/api/availability-time-slots", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const slot = await storage.createAvailabilityTimeSlot(req.body);
+      return res.status(201).json(slot);
+    } catch (error) {
+      console.error("Create availability time slot error:", error);
+      return res.status(500).json({ message: "Error creating availability time slot" });
+    }
+  });
+  
+  app.put("/api/availability-time-slots/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const slot = await storage.updateAvailabilityTimeSlot(Number(id), req.body);
+      return res.json(slot);
+    } catch (error) {
+      console.error("Update availability time slot error:", error);
+      return res.status(500).json({ message: "Error updating availability time slot" });
+    }
+  });
+  
+  app.delete("/api/availability-time-slots/:id", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteAvailabilityTimeSlot(Number(id));
+      if (success) {
+        return res.json({ success: true });
+      }
+      return res.status(404).json({ message: "Availability time slot not found" });
+    } catch (error) {
+      console.error("Delete availability time slot error:", error);
+      return res.status(500).json({ message: "Error deleting availability time slot" });
+    }
+  });
+  
+  // Candidate availability endpoints
+  app.get("/api/candidates/:candidateId/availability", async (req: Request, res: Response) => {
+    try {
+      const { candidateId } = req.params;
+      const availability = await storage.getCandidateAvailability(Number(candidateId));
+      
+      if (!availability) {
+        return res.status(404).json({ message: "Candidate availability not found" });
+      }
+      
+      return res.json(availability);
+    } catch (error) {
+      console.error("Get candidate availability error:", error);
+      return res.status(500).json({ message: "Error fetching candidate availability" });
+    }
+  });
+  
+  app.get("/api/applications/:applicationId/availability", async (req: Request, res: Response) => {
+    try {
+      const { applicationId } = req.params;
+      const availability = await storage.getCandidateAvailabilityByApplication(Number(applicationId));
+      
+      if (!availability) {
+        return res.status(404).json({ message: "Application availability not found" });
+      }
+      
+      return res.json(availability);
+    } catch (error) {
+      console.error("Get application availability error:", error);
+      return res.status(500).json({ message: "Error fetching application availability" });
+    }
+  });
+  
+  app.post("/api/candidates/:candidateId/availability", async (req: Request, res: Response) => {
+    try {
+      const { candidateId } = req.params;
+      const { applicationId, timeZone, preferredDays, preferredTimeStart, preferredTimeEnd, specificDates, unavailableDates, notes } = req.body;
+      
+      // Validate required fields
+      if (!preferredDays || !preferredTimeStart || !preferredTimeEnd) {
+        return res.status(400).json({ message: "Missing required availability information" });
+      }
+      
+      // Create availability record
+      const availability = await storage.createCandidateAvailability({
+        candidateId: Number(candidateId),
+        applicationId: applicationId ? Number(applicationId) : undefined,
+        timeZone,
+        preferredDays,
+        preferredTimeStart,
+        preferredTimeEnd,
+        specificDates,
+        unavailableDates,
+        notes
+      });
+      
+      // Create an audit log
+      await storage.createAuditLog({
+        action: "candidate_availability_submitted",
+        details: `Candidate ID: ${candidateId} submitted availability preferences`,
+        ipAddress: req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      
+      return res.status(201).json(availability);
+    } catch (error) {
+      console.error("Create candidate availability error:", error);
+      return res.status(500).json({ message: "Error creating candidate availability" });
+    }
+  });
+  
+  app.put("/api/candidate-availability/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const availability = await storage.updateCandidateAvailability(Number(id), req.body);
+      return res.json(availability);
+    } catch (error) {
+      console.error("Update candidate availability error:", error);
+      return res.status(500).json({ message: "Error updating candidate availability" });
+    }
+  });
+
   // Register communication routes
   registerCommunicationRoutes(app, storage);
 

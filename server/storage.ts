@@ -690,6 +690,100 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Availability time slots methods
+  async getAvailabilityTimeSlots(): Promise<AvailabilityTimeSlot[]> {
+    try {
+      return await db.select().from(availabilityTimeSlots)
+        .orderBy(asc(availabilityTimeSlots.dayOfWeek), asc(availabilityTimeSlots.startTime));
+    } catch (error) {
+      console.error('Error getting availability time slots:', error);
+      return [];
+    }
+  }
+
+  async createAvailabilityTimeSlot(slot: InsertAvailabilityTimeSlot): Promise<AvailabilityTimeSlot> {
+    try {
+      const [newSlot] = await db.insert(availabilityTimeSlots).values(slot).returning();
+      return newSlot;
+    } catch (error) {
+      console.error('Error creating availability time slot:', error);
+      throw error;
+    }
+  }
+
+  async updateAvailabilityTimeSlot(id: number, slot: Partial<InsertAvailabilityTimeSlot>): Promise<AvailabilityTimeSlot> {
+    try {
+      const [updatedSlot] = await db.update(availabilityTimeSlots)
+        .set(slot)
+        .where(eq(availabilityTimeSlots.id, id))
+        .returning();
+      return updatedSlot;
+    } catch (error) {
+      console.error('Error updating availability time slot:', error);
+      throw error;
+    }
+  }
+
+  async deleteAvailabilityTimeSlot(id: number): Promise<boolean> {
+    try {
+      await db.delete(availabilityTimeSlots).where(eq(availabilityTimeSlots.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting availability time slot:', error);
+      return false;
+    }
+  }
+
+  // Candidate availability methods
+  async getCandidateAvailability(candidateId: number): Promise<CandidateAvailability | undefined> {
+    try {
+      const [availability] = await db.select().from(candidateAvailability)
+        .where(eq(candidateAvailability.candidateId, candidateId))
+        .orderBy(desc(candidateAvailability.submittedAt))
+        .limit(1);
+      return availability;
+    } catch (error) {
+      console.error('Error getting candidate availability:', error);
+      return undefined;
+    }
+  }
+
+  async getCandidateAvailabilityByApplication(applicationId: number): Promise<CandidateAvailability | undefined> {
+    try {
+      const [availability] = await db.select().from(candidateAvailability)
+        .where(eq(candidateAvailability.applicationId, applicationId))
+        .orderBy(desc(candidateAvailability.submittedAt))
+        .limit(1);
+      return availability;
+    } catch (error) {
+      console.error('Error getting candidate availability by application:', error);
+      return undefined;
+    }
+  }
+
+  async createCandidateAvailability(availability: InsertCandidateAvailability): Promise<CandidateAvailability> {
+    try {
+      const [newAvailability] = await db.insert(candidateAvailability).values(availability).returning();
+      return newAvailability;
+    } catch (error) {
+      console.error('Error creating candidate availability:', error);
+      throw error;
+    }
+  }
+
+  async updateCandidateAvailability(id: number, availability: Partial<InsertCandidateAvailability>): Promise<CandidateAvailability> {
+    try {
+      const [updatedAvailability] = await db.update(candidateAvailability)
+        .set(availability)
+        .where(eq(candidateAvailability.id, id))
+        .returning();
+      return updatedAvailability;
+    } catch (error) {
+      console.error('Error updating candidate availability:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
