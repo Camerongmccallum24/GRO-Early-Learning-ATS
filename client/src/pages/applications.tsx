@@ -378,11 +378,25 @@ export default function Applications() {
         }}
       >
         <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Application Details</DialogTitle>
-            <DialogDescription>
-              Detailed information about this application
-            </DialogDescription>
+          <DialogHeader className="flex justify-between items-start">
+            <div>
+              <DialogTitle>Candidate Application</DialogTitle>
+              <DialogDescription>
+                {applicationDetail?.candidate?.name || "Candidate"}'s details
+              </DialogDescription>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                setApplicationDetail(null);
+                setShowEmailForm(false);
+              }}
+              className="h-8 w-8 p-0 rounded-full"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
           </DialogHeader>
           {applicationDetail && (
             <div className="mt-4">
@@ -406,19 +420,39 @@ export default function Applications() {
                 <div>
                   <h3 className="text-lg font-semibold mb-2 flex items-center">
                     Candidate Information
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="ml-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Toggle email form display
-                        setShowEmailForm(!showEmailForm);
-                      }}
-                    >
-                      <Mail className="h-4 w-4" />
-                      <span className="sr-only">Send Email</span>
-                    </Button>
+                    <div className="flex space-x-1 ml-2">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowEmailForm(!showEmailForm);
+                        }}
+                      >
+                        <Mail className="h-4 w-4" />
+                        <span className="sr-only">Send Email</span>
+                      </Button>
+                      
+                      {applicationDetail.candidate?.phone && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Format phone for WhatsApp
+                            const phone = applicationDetail.candidate?.phone.replace(/\D/g, '');
+                            window.open(`https://wa.me/${phone}`, '_blank');
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                          </svg>
+                          <span className="sr-only">WhatsApp</span>
+                        </Button>
+                      )}
+                    </div>
                   </h3>
                   <div className="bg-gray-50 p-4 rounded-md">
                     <div className="flex items-center mb-4">
@@ -484,36 +518,40 @@ export default function Applications() {
                 </div>
                 
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Job Details</h3>
+                  <h3 className="text-lg font-semibold mb-2">Position Summary</h3>
                   <div className="bg-gray-50 p-4 rounded-md">
-                    <h4 className="text-base font-medium mb-2">
-                      {applicationDetail.jobPosting?.title || "Unknown Position"}
-                    </h4>
-                    
-                    <div className="space-y-2">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="text-sm font-medium">Location</p>
+                        <h4 className="text-base font-medium">
+                          {applicationDetail.jobPosting?.title || "Unknown Position"}
+                        </h4>
                         <p className="text-sm text-gray-600">
                           {applicationDetail.jobPosting?.location?.name || "Unknown"}
                         </p>
                       </div>
-                      
+                      <ApplicationStatusBadge status={applicationDetail.status} />
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm mb-4 border-t pt-3">
                       <div>
-                        <p className="text-sm font-medium">Required Qualifications</p>
-                        <p className="text-sm text-gray-600">
-                          {applicationDetail.jobPosting?.qualifications || "Not specified"}
-                        </p>
+                        <span className="font-medium">Applied:</span> {formatDate(applicationDetail.applicationDate || applicationDetail.createdAt)}
                       </div>
-                      
-                      {applicationDetail.notes && (
+                      {applicationDetail.jobPosting?.type && (
                         <div>
-                          <p className="text-sm font-medium">Candidate Notes</p>
-                          <p className="text-sm text-gray-600 whitespace-pre-line">
-                            {applicationDetail.notes}
-                          </p>
+                          <span className="font-medium">Type:</span> {applicationDetail.jobPosting?.type}
                         </div>
                       )}
                     </div>
+                      
+                    {applicationDetail.notes && (
+                      <div className="mb-2">
+                        <p className="text-sm font-medium">Candidate Notes</p>
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-3 whitespace-pre-line">
+                          {applicationDetail.notes}
+                        </p>
+                      </div>
+                    )}
+                    
                   </div>
                   
                   {applicationDetail.candidate?.resumePath && (
