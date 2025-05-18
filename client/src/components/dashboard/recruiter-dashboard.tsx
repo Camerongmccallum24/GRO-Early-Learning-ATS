@@ -450,7 +450,7 @@ export default function RecruiterDashboard() {
                               <div className="flex items-center">
                                 <h4 className="font-medium dark:text-white mr-2">{app.candidate?.name || "Unknown Candidate"}</h4>
                                 <button 
-                                  onClick={() => navigate(`/applications/${app.id}`)}
+                                  onClick={() => navigate(`/applications?id=${app.id}`)}
                                   className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 p-1 rounded"
                                   aria-label={`View ${app.candidate?.name || "candidate"}'s application details`}
                                 >
@@ -482,7 +482,7 @@ export default function RecruiterDashboard() {
                             
                             <div 
                               className="flex items-center text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:underline"
-                              onClick={() => navigate(`/applications/${app.id}`)}
+                              onClick={() => navigate(`/applications?id=${app.id}`)}
                             >
                               {app.jobPosting?.title || "Unknown Role"} • {app.jobPosting?.location?.name || "Unknown Location"}
                             </div>
