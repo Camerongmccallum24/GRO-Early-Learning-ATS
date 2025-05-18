@@ -129,8 +129,13 @@ export default function JobPostingForm({ id }: JobPostingFormProps) {
     mutationFn: async (values: JobPostingFormValues) => {
       // Add the current user ID as hiring manager and creator
       const currentUserId = '123456789'; // This is the mock user ID we're using
+      
+      // Convert locationId from string to number if it exists
+      const locationId = values.locationId ? parseInt(values.locationId as string, 10) : null;
+      
       const valuesWithUser = {
         ...values,
+        locationId,
         hiringManagerId: currentUserId,
         createdById: currentUserId
       };
