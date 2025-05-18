@@ -197,7 +197,8 @@ export default function JobPostings() {
                   category: job.category || 'General',
                   location: job.locationName,
                   employmentType: formatEmploymentType(job.employmentType),
-                  createdAt: job.createdAt
+                  createdAt: job.createdAt,
+                  applicationLinks: job.applicationLinks || []
                 }))}
                 onView={(id) => {
                   window.location.href = `/jobs/edit/${id}`;

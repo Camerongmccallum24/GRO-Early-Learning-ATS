@@ -202,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hash,
           description: "Default application link",
           active: true,
-          clickCount: 0,
+          createdById: req.user?.id || null,
         });
         
         console.log(`Created application link for job posting ID: ${newJobPosting.id}`);
