@@ -303,7 +303,19 @@ export function EnhancedEmailForm({
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-4">
               <div className="space-y-2">
-                <Label htmlFor="context" className="text-xs text-purple-800">Email Context</Label>
+                <div className="flex items-center">
+                  <Label htmlFor="context" className="text-xs text-purple-800">Email Context</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 ml-1 text-purple-700 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[250px] p-3">
+                        <p className="text-xs">Select the purpose of your email. This helps the AI understand what type of content to generate and how to structure the message.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Select
                   value={generationContext}
                   onValueChange={setGenerationContext}
@@ -325,7 +337,19 @@ export function EnhancedEmailForm({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="tone" className="text-xs text-purple-800">Communication Tone</Label>
+                <div className="flex items-center">
+                  <Label htmlFor="tone" className="text-xs text-purple-800">Communication Tone</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3 w-3 ml-1 text-purple-700 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[250px] p-3">
+                        <p className="text-xs">Choose how your email should sound. Professional is formal and business-like, friendly is warm and approachable, concise is brief and to-the-point.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Select
                   value={generationTone}
                   onValueChange={setGenerationTone}
@@ -346,7 +370,19 @@ export function EnhancedEmailForm({
             </div>
             
             <div className="space-y-2 mb-4">
-              <Label htmlFor="additional-context" className="text-xs text-purple-800">Additional Context (Optional)</Label>
+              <div className="flex items-center">
+                <Label htmlFor="additional-context" className="text-xs text-purple-800">Additional Context (Optional)</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3 w-3 ml-1 text-purple-700 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[250px] p-3">
+                      <p className="text-xs">Add any specific details you want included in your email. This could be interview times, specific qualifications, or anything else you want to highlight.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Textarea
                 id="additional-context"
                 placeholder="Add any specific details you want included in the email..."
