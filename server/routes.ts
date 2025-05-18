@@ -173,10 +173,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const jobPostingData = insertJobPostingSchema.parse(req.body);
       
-      // Add the current user as the creator
+      // Add the current user as the creator and hiring manager
       const jobPostingWithUser = {
         ...jobPostingData,
         createdById: req.user?.id,
+        hiringManagerId: req.user?.id // Ensure hiring manager is set to avoid FK constraint error
       };
       
       const newJobPosting = await storage.createJobPosting(jobPostingWithUser);
