@@ -190,7 +190,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Automatically generate an application link for the new job posting
       try {
-        const { hash, slug } = await generateSEOFriendlyJobURL(newJobPosting.title);
+        // Generate a unique hash for the application link
+        const timestamp = Date.now().toString();
+        const hashData = `${newJobPosting.id}-${timestamp}`;
+        const hash = require('crypto').createHash('sha256').update(hashData).digest('hex').substring(0, 12);
+        
         await storage.createApplicationLink({
           jobPostingId: newJobPosting.id,
           hash,
