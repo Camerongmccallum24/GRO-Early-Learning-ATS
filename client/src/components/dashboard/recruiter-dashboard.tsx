@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Clock, Users, Check, X, AlertCircle, Award } from 'lucide-react';
+import { Clock, Users, Check, X, AlertCircle, Award, ExternalLink } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -80,6 +81,9 @@ interface DashboardStats {
 }
 
 export default function RecruiterDashboard() {
+  // For navigation with wouter
+  const [, navigate] = useLocation();
+
   // Filters and sorting
   const [filter, setFilter] = useState({ location: "all", role: "all" });
   const [sortBy, setSortBy] = useState('name');
@@ -443,7 +447,16 @@ export default function RecruiterDashboard() {
                             }}
                           >
                             <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-medium dark:text-white">{app.candidate?.name || "Unknown Candidate"}</h4>
+                              <div className="flex items-center">
+                                <h4 className="font-medium dark:text-white mr-2">{app.candidate?.name || "Unknown Candidate"}</h4>
+                                <button 
+                                  onClick={() => navigate(`/applications/${app.id}`)}
+                                  className="text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900 p-1 rounded"
+                                  aria-label={`View ${app.candidate?.name || "candidate"}'s application details`}
+                                >
+                                  <ExternalLink size={14} />
+                                </button>
+                              </div>
                               <div className="flex">
                                 <button
                                   onClick={() => {
@@ -466,9 +479,13 @@ export default function RecruiterDashboard() {
                                 </button>
                               </div>
                             </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                            
+                            <div 
+                              className="flex items-center text-sm text-gray-600 dark:text-gray-300 cursor-pointer hover:underline"
+                              onClick={() => navigate(`/applications/${app.id}`)}
+                            >
                               {app.jobPosting?.title || "Unknown Role"} • {app.jobPosting?.location?.name || "Unknown Location"}
-                            </p>
+                            </div>
                             
                             {app.candidate?.certifications && (
                               <div className="mt-2 flex space-x-1 flex-wrap">
