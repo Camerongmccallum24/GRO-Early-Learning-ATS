@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
@@ -324,7 +327,7 @@ ${c.resume ? `Resume: ${c.resume}` : ""}`;
 
     // Prepare job posting information
     const jobInfo = `
-Job ID: ${jobPosting.id}
+ Job ID: ${jobPosting.id}
 Title: ${jobPosting.title}
 Location: ${jobPosting.locationName || "Not specified"}
 Description: ${jobPosting.description}
