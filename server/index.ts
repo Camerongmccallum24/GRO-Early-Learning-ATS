@@ -5,6 +5,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedSampleData } from "./utils/seed-data";
+import { SERVER_REQUEST_TIMEOUT } from "./utils/timeout-settings";
 
 // Set up development environment variables
 if (process.env.NODE_ENV === "development") {
@@ -16,6 +17,23 @@ if (process.env.NODE_ENV === "development") {
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Request timeout middleware
+app.use((req, res, next) => {
+  const timeout = setTimeout(() => {
+    next(new Error(`Request timeout after ${SERVER_REQUEST_TIMEOUT}ms`));
+  }, SERVER_REQUEST_TIMEOUT);
+  
+  res.on('finish', () => {
+    clearTimeout(timeout);
+  });
+  
+  res.on('close', () => {
+    clearTimeout(timeout);
+  });
+  
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
