@@ -1,0 +1,944 @@
+[
+  {
+    "tableName": "application_links",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('application_links_id_seq'::regclass)"
+      },
+      {
+        "column_name": "job_posting_id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "hash",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "custom_url_slug",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_by_id",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "expiry_date",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "true"
+      },
+      {
+        "column_name": "click_count",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "0"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "last_clicked_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": [
+      {
+        "column_name": "job_posting_id",
+        "foreign_table_name": "job_postings",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "created_by_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      }
+    ]
+  },
+  {
+    "tableName": "applications",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('applications_id_seq'::regclass)"
+      },
+      {
+        "column_name": "candidate_id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "job_posting_id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "status",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO",
+        "column_default": "'applied'::application_status"
+      },
+      {
+        "column_name": "source",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'direct'::text"
+      },
+      {
+        "column_name": "notes",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "application_date",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "last_status_change_date",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": [
+      {
+        "column_name": "candidate_id",
+        "foreign_table_name": "candidates",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "job_posting_id",
+        "foreign_table_name": "job_postings",
+        "foreign_column_name": "id"
+      }
+    ]
+  },
+  {
+    "tableName": "audit_logs",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('audit_logs_id_seq'::regclass)"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "action",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "details",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "ip_address",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "user_agent",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "timestamp",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": [
+      {
+        "column_name": "user_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      }
+    ]
+  },
+  {
+    "tableName": "availability_time_slots",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('availability_time_slots_id_seq'::regclass)"
+      },
+      {
+        "column_name": "day_of_week",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "start_time",
+        "data_type": "time without time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "end_time",
+        "data_type": "time without time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "is_default",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": []
+  },
+  {
+    "tableName": "candidate_availability",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('candidate_availability_id_seq'::regclass)"
+      },
+      {
+        "column_name": "candidate_id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "application_id",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "time_zone",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'Australia/Sydney'::text"
+      },
+      {
+        "column_name": "preferred_days",
+        "data_type": "jsonb",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "preferred_time_start",
+        "data_type": "time without time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "preferred_time_end",
+        "data_type": "time without time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "specific_dates",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "unavailable_dates",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "notes",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "submitted_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": [
+      {
+        "column_name": "candidate_id",
+        "foreign_table_name": "candidates",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "application_id",
+        "foreign_table_name": "applications",
+        "foreign_column_name": "id"
+      }
+    ]
+  },
+  {
+    "tableName": "candidates",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('candidates_id_seq'::regclass)"
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "email",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "phone",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "resume_path",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "skills",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "experience",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "education",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "consent_date",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "consent_policy_version",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'1.0'::text"
+      },
+      {
+        "column_name": "ccpa_opt_out",
+        "data_type": "boolean",
+        "is_nullable": "NO",
+        "column_default": "false"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": []
+  },
+  {
+    "tableName": "communication_logs",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('communication_logs_id_seq'::regclass)"
+      },
+      {
+        "column_name": "candidate_id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "application_id",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "type",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "subject",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "message",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "direction",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'outbound'::text"
+      },
+      {
+        "column_name": "initiated_by",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "timestamp",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "metadata",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": [
+      {
+        "column_name": "candidate_id",
+        "foreign_table_name": "candidates",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "application_id",
+        "foreign_table_name": "applications",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "initiated_by",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      }
+    ]
+  },
+  {
+    "tableName": "interviews",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('interviews_id_seq'::regclass)"
+      },
+      {
+        "column_name": "application_id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "scheduled_date",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "duration",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "60"
+      },
+      {
+        "column_name": "interview_type",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'in_person'::text"
+      },
+      {
+        "column_name": "location",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "interviewer_id",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "notes",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "status",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'scheduled'::text"
+      },
+      {
+        "column_name": "feedback",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "video_link",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "calendar_event_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "recording_permission",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "reminder_sent",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": [
+      {
+        "column_name": "application_id",
+        "foreign_table_name": "applications",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "interviewer_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      }
+    ]
+  },
+  {
+    "tableName": "job_categories",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('job_categories_id_seq'::regclass)"
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "slug",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": []
+  },
+  {
+    "tableName": "job_postings",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('job_postings_id_seq'::regclass)"
+      },
+      {
+        "column_name": "title",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "requisition_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "department_id",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "hiring_manager_id",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "location_id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "category_id",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "url_slug",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "employment_type",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "salary_min",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "salary_max",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "currency",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'AUD'::text"
+      },
+      {
+        "column_name": "salary_range",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "qualifications",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "requirements",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "benefits",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "application_count",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "deadline",
+        "data_type": "date",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "status",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO",
+        "column_default": "'draft'::job_status"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "created_by_id",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": [
+      {
+        "column_name": "hiring_manager_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "location_id",
+        "foreign_table_name": "locations",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "category_id",
+        "foreign_table_name": "job_categories",
+        "foreign_column_name": "id"
+      },
+      {
+        "column_name": "created_by_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      }
+    ]
+  },
+  {
+    "tableName": "locations",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": "nextval('locations_id_seq'::regclass)"
+      },
+      {
+        "column_name": "name",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "city",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "state",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'QLD'::text"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": []
+  },
+  {
+    "tableName": "sessions",
+    "columns": [
+      {
+        "column_name": "sid",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "sess",
+        "data_type": "jsonb",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "expire",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      }
+    ],
+    "primaryKeys": [
+      "sid"
+    ],
+    "foreignKeys": []
+  },
+  {
+    "tableName": "users",
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "character varying",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "email",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "first_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_name",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "profile_image_url",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "role",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": "'hr_admin'::text"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "primaryKeys": [
+      "id"
+    ],
+    "foreignKeys": []
+  }
+]
