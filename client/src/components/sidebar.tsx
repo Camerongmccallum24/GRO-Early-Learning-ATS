@@ -190,7 +190,7 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
           {/* Collapse toggle button - desktop only - repositioned for better accessibility */}
           <button
             onClick={toggleCollapsed}
-            className="absolute right-4 top-4 hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 group relative"
+            className="absolute right-4 top-4 hidden lg:flex items-center justify-center h-8 w-8 rounded-full text-gray-500 hover:bg-gray-100 group"
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
