@@ -249,57 +249,29 @@ export function Sidebar({ isMobile = false, onCollapseChange }: SidebarProps) {
 
           {/* User profile and logout */}
           <div className="mt-auto pb-5 border-t border-gray-200 pt-3">
-            {authUser && !isCollapsed && (
-              <div className="mb-3">
-                <div className="flex items-center gap-2 p-3">
-                  {authUser.profileImageUrl && (
-                    <img
-                      src={authUser.profileImageUrl}
-                      alt="Profile"
-                      className="w-8 h-8 rounded-full object-cover shrink-0"
-                    />
-                  )}
-                  <div className="text-sm overflow-hidden">
-                    <div className="font-medium text-gray-900 truncate">
-                      {authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}` : authUser.email || 'GRO Staff'}
-                    </div>
-                    <div className="text-xs text-gray-500 truncate">
-                      {authUser.email || ''}
-                    </div>
-                  </div>
+            <div className="flex items-center gap-x-3 px-3">
+              {authUser?.profileImageUrl ? (
+                <img
+                  src={authUser.profileImageUrl}
+                  alt="User profile"
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+              ) : (
+                <UserIcon className="h-10 w-10 text-gray-400" />
+              )}
+              {!isCollapsed && (
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{authUser?.firstName} {authUser?.lastName}</p>
+                  <p className="text-xs text-gray-500">{authUser?.email}</p>
                 </div>
-              </div>
-            )}
-
-            {/* Profile image only when collapsed */}
-            {authUser && isCollapsed && (
-              <div className="flex justify-center mb-3">
-                {authUser.profileImageUrl ? (
-                  <img
-                    src={authUser.profileImageUrl}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-[#e89174] flex items-center justify-center text-white">
-                    {authUser.firstName?.charAt(0) || authUser.email?.charAt(0) || '?'}
-                  </div>
-                )}
-              </div>
-            )}
-
+              )}
+            </div>
             <button
               onClick={logout}
-              className={cn(
-                "group flex items-center gap-x-3 rounded-md p-3 text-sm font-semibold text-[#2c2c2c] hover:bg-gray-100 hover:text-[#7356ff]",
-                isCollapsed ? "justify-center w-full" : "w-full"
-              )}
+              className="mt-3 w-full flex items-center justify-center gap-x-2 rounded-md bg-[#e89174] text-white py-2 px-4 text-sm font-medium hover:bg-[#d8755b] focus:ring-2 focus:ring-[#7356ff] focus:ring-offset-2"
             >
-              <LogOutIcon
-                className="h-5 w-5 shrink-0 text-[#2c2c2c] group-hover:text-[#7356ff]"
-                aria-hidden="true"
-              />
-              {!isCollapsed && <span>Log Out</span>}
+              <LogOutIcon className="h-5 w-5" />
+              {!isCollapsed && <span>Logout</span>}
             </button>
           </div>
         </nav>
