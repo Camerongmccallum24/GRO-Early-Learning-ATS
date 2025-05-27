@@ -48,7 +48,7 @@ const jobPostingSchema = z.object({
   locationId: z.number({
     required_error: "Location is required",
     invalid_type_error: "Location must be a number",
-  }),
+  }).default(0), // Provide a default value for locationId
   employmentType: z.string({
     required_error: "Employment type is required",
   }),

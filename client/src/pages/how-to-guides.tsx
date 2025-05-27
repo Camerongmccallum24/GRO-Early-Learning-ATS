@@ -613,6 +613,10 @@ export default function HowToGuides() {
             </TabsContent>
           ))}
         </Tabs>
+
+        {guides.length === 0 && (
+          <p className="text-gray-500 text-center">No results found for your search.</p>
+        )}
       </div>
     </div>
   );

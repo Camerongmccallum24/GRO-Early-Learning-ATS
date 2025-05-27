@@ -38,6 +38,7 @@ const Interviews = () => {
 
   // Handle filtering
   const filteredInterviews = interviews?.filter((interview: any) => {
+    if (!interviews) return false; // Add null check for interviews
     if (statusFilter !== 'all' && interview.status !== statusFilter) {
       return false;
     }

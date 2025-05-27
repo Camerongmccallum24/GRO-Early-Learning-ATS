@@ -199,6 +199,16 @@ export function CandidateProfileForm({ jobId, onSuccess }: CandidateProfileFormP
                       className="w-full h-full"
                     />
                   </div>
+                  <Button
+                    variant="secondary"
+                    className="mt-2"
+                    onClick={() => {
+                      URL.revokeObjectURL(previewUrl);
+                      setPreviewUrl(null);
+                    }}
+                  >
+                    Close Preview
+                  </Button>
                 </div>
               )}
             </div>

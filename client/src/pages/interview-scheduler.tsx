@@ -23,7 +23,7 @@ const InterviewScheduler = () => {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const applicationId = id ? parseInt(id) : undefined;
+  const applicationId = id && !isNaN(parseInt(id)) ? parseInt(id) : undefined; // Validate applicationId
   
   // Get current user data
   const { data: user } = useQuery({

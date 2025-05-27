@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function JobPostings() {
   const [filters, setFilters] = useState<{ location?: number | string; position?: string; status?: string }>({
@@ -25,6 +26,7 @@ export default function JobPostings() {
   });
   const [jobToClose, setJobToClose] = useState<number | null>(null);
   const [jobToReopen, setJobToReopen] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("active");
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -34,40 +36,22 @@ export default function JobPostings() {
     queryFn: async ({ queryKey }) => {
       const [_, filterParams] = queryKey as [string, { location?: string | number; status?: string }];
       const params = new URLSearchParams();
-      
+
+      if (!filterParams) {
+        throw new Error("Filter parameters are missing.");
+      }
+
       if (filterParams.location && filterParams.location !== 'all') params.append("locationId", String(filterParams.location));
       if (filterParams.status && filterParams.status !== 'all') params.append("status", String(filterParams.status));
-      
+
       const url = `/api/job-postings${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await fetch(url, { credentials: "include" });
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch job postings");
       }
-      
-      // Fetch job postings first
-      const jobs = await response.json();
-      
-      // For each job, fetch its application links
-      const jobsWithLinks = await Promise.all(jobs.map(async (job: any) => {
-        try {
-          const linksResponse = await fetch(`/api/job-postings/${job.id}/application-links`, { 
-            credentials: "include" 
-          });
-          
-          if (linksResponse.ok) {
-            const links = await linksResponse.json();
-            return { ...job, applicationLinks: links };
-          }
-          
-          return job;
-        } catch (error) {
-          console.error(`Error fetching application links for job ${job.id}:`, error);
-          return job;
-        }
-      }));
-      
-      return jobsWithLinks;
+
+      return await response.json();
     },
   });
 
@@ -168,60 +152,73 @@ export default function JobPostings() {
       {/* Filters */}
       <JobFilters onFilterChange={handleFilterChange} />
 
-      {/* Job Postings List - Using our Responsive Table Component */}
-      <Card className="shadow overflow-hidden">
-        <CardContent className="p-0 md:p-4">
-          {isLoading ? (
-            <div className="p-6 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-gray-500">Loading job postings...</p>
-            </div>
-          ) : jobPostings.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-500 mb-3">No job postings found.</p>
-              <Link href="/jobs/new">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create one now
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-hidden">
-              <JobPostingsTable 
-                jobPostings={jobPostings.map((job: any) => ({
-                  id: job.id,
-                  title: job.title,
-                  requisitionId: job.requisitionId || '-',
-                  status: job.status,
-                  category: job.category || 'General',
-                  location: job.locationName,
-                  employmentType: formatEmploymentType(job.employmentType),
-                  createdAt: job.createdAt,
-                  applicationLinks: job.applicationLinks || []
-                }))}
-                onView={(id) => {
-                  window.location.href = `/jobs/edit/${id}`;
-                }}
-                onEdit={(id) => {
-                  window.location.href = `/jobs/edit/${id}`;
-                }}
-                onDelete={(id) => {
-                  if (jobPostings.find((job: any) => job.id === id)?.status === 'closed') {
-                    handleReopenJob(id);
-                  } else {
-                    handleCloseJob(id);
-                  }
-                }}
-                onCreateLink={(id) => {
-                  // Redirect to job edit page with application link section open
-                  window.location.href = `/jobs/edit/${id}?section=application-links`;
-                }}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Tabbed Interface */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+        <TabsList className="bg-gray-200 p-2 rounded-md border border-gray-300">
+          <TabsTrigger
+            value="active"
+            className={`px-4 py-2 rounded-md font-medium border ${activeTab === "active" ? "bg-green-600 text-white border-green-700" : "bg-white text-gray-800 border-gray-300"}`}
+          >
+            Active Jobs
+          </TabsTrigger>
+          <TabsTrigger
+            value="closed"
+            className={`px-4 py-2 rounded-md font-medium border ${activeTab === "closed" ? "bg-red-600 text-white border-red-700" : "bg-white text-gray-800 border-gray-300"}`}
+          >
+            Closed Jobs
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active">
+          <Card className="shadow overflow-hidden">
+            <CardContent className="p-0 md:p-4">
+              {isLoading ? (
+                <div className="p-6 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-gray-500">Loading active job postings...</p>
+                </div>
+              ) : jobPostings.filter(job => job.status === "active").length === 0 ? (
+                <div className="p-6 text-center">
+                  <p className="text-gray-500 mb-3">No active job postings found.</p>
+                </div>
+              ) : (
+                <JobPostingsTable
+                  jobPostings={jobPostings.filter(job => job.status === "active")}
+                  onView={(id) => window.location.href = `/jobs/edit/${id}`}
+                  onEdit={(id) => window.location.href = `/jobs/edit/${id}`}
+                  onDelete={handleCloseJob}
+                  onCreateLink={(id) => window.location.href = `/jobs/edit/${id}?section=application-links`}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="closed">
+          <Card className="shadow overflow-hidden">
+            <CardContent className="p-0 md:p-4">
+              {isLoading ? (
+                <div className="p-6 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-gray-500">Loading closed job postings...</p>
+                </div>
+              ) : jobPostings.filter(job => job.status === "closed").length === 0 ? (
+                <div className="p-6 text-center">
+                  <p className="text-gray-500 mb-3">No closed job postings found.</p>
+                </div>
+              ) : (
+                <JobPostingsTable
+                  jobPostings={jobPostings.filter(job => job.status === "closed")}
+                  onView={(id) => window.location.href = `/jobs/edit/${id}`}
+                  onEdit={(id) => window.location.href = `/jobs/edit/${id}`}
+                  onDelete={handleReopenJob}
+                  onCreateLink={(id) => window.location.href = `/jobs/edit/${id}?section=application-links`}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Close Job Dialog */}
       <Dialog open={jobToClose !== null} onOpenChange={(open) => !open && setJobToClose(null)}>

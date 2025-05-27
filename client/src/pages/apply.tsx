@@ -170,6 +170,21 @@ export default function Apply({
     );
   }
 
+  // Validate jobId and hash format
+  if (!jobId || isNaN(Number(jobId))) {
+    setError("Invalid job ID.");
+    setIsValid(false);
+    setIsValidating(false);
+    return;
+  }
+
+  if (!hash || hash.length < 5) {
+    setError("Invalid hash.");
+    setIsValid(false);
+    setIsValidating(false);
+    return;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto w-full">

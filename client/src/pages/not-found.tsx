@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -14,6 +15,15 @@ export default function NotFound() {
           <p className="mt-4 text-sm text-gray-600">
             Did you forget to add the page to the router?
           </p>
+
+          <div className="flex gap-2">
+            <Button onClick={() => window.history.back()} className="mt-4">
+              Go Back
+            </Button>
+            <Button onClick={() => (window.location.href = "/")} className="mt-4 ml-2">
+              Home
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

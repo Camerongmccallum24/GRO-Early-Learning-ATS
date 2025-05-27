@@ -47,6 +47,7 @@ export default function Candidates() {
 
   // Filter candidates based on search term
   const filteredCandidates = useMemo(() => {
+    if (!candidates) return []; // Add null check for candidates
     if (!searchTerm) return candidates;
     
     const lowerSearchTerm = searchTerm.toLowerCase();
